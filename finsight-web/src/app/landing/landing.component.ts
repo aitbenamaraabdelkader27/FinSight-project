@@ -28,7 +28,7 @@ import { RouterLink } from '@angular/router';
             <h1>Local intelligence for faster financial analysis and clearer decisions.</h1>
             <p class="hero-text">
               FinSight combines a disciplined business logic layer with a local LLM via
-              LM Studio to deliver structured analysis, summaries, and financial
+              Mistral Nemo to deliver structured analysis, summaries, and financial
               explanations without relying on paid APIs.
             </p>
 
@@ -179,7 +179,7 @@ import { RouterLink } from '@angular/router';
               <article>
                 <h3>Local by design</h3>
                 <p>
-                  Llama 3 8B Instruct runs through LM Studio on a local HTTP endpoint,
+                  Mistral Nemo runs through LM Studio on a local HTTP endpoint,
                   avoiding dependency on paid external APIs.
                 </p>
               </article>
