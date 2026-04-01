@@ -4,12 +4,13 @@
   box-sizing: border-box;
 }
 
-html, body {
+html,
+body {
   width: 100%;
   height: 100%;
 }
 
-:root { 
+:root {
   color-scheme: dark;
   --bg-base: #07111f;
   --bg-accent: #0e2740;
@@ -18,24 +19,25 @@ html, body {
   --text-muted: #8fa3bb;
   --accent-soft: #8fd8ff;
   --panel-shadow: 0 18px 60px rgba(0, 0, 0, 0.22);
+}
 
-}
 html {
-  scroll-beahvior : smooth;
+  scroll-behavior: smooth;
 }
+
 body {
-  font-family: "Seoge UI", "Helvetica Neue", Arial, sans-serif;
+  font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
   color: var(--text-primary);
   background:
     radial-gradient(circle at top left, rgba(56, 128, 209, 0.28), transparent 28%),
     radial-gradient(circle at 85% 15%, rgba(118, 237, 193, 0.12), transparent 20%),
     linear-gradient(180deg, #081321 0%, #040a14 100%);
   background-attachment: fixed;
-
 }
+
 body::before {
   content: "";
-  position : fixed;
+  position: fixed;
   inset: 0;
   pointer-events: none;
   background-image:
@@ -44,7 +46,8 @@ body::before {
   background-size: 72px 72px;
   mask-image: radial-gradient(circle at center, black, transparent 82%);
 }
-a, 
+
+a,
 button {
   font: inherit;
 }
