@@ -25,18 +25,10 @@ class FinSightBot:
             try:
                 from .ollama_client import OllamaClient
                 self.ollama_client = OllamaClient()
-                if not self.ollama_client.check_connection():
-                    print("Ollama not running. Falling back to basic mode.")
-                    print("   Run 'ollama serve' to enable LLM features.")
-                    self.use_ollama = False
-                else:
-                    print("Ollama connected! LLM features enabled.")
-                    models = self.ollama_client.list_models()
-                    print(f"Available models: {', '.join(models)}")
+                print(f"FinSight initialized with Ollama model: {self.ollama_client.model}")
+                print("Ollama connection will be checked on first request.")
             except Exception as e:
-                print(f"Ollama not available: {e}")
-                print("Falling back to basic mode.")
-                self.use_ollama = False
+                print(f"Warning: Could not initialize Ollama client: {e}")
     
     def _load_system_prompt(self) -> str:
         """Load the system prompt"""
@@ -92,9 +84,18 @@ Remember: You are a professional assistant for finance professionals."""
     def _handle_conversation(self, message: str) -> str:
         """Handle general conversation using Ollama LLM"""
         
-        # Check if Ollama is available
+        # Check if Ollama is available - dynamic check on each request
         if self.use_ollama and self.ollama_client:
             try:
+                # Dynamic check - reconnect if needed
+                if not self.ollama_client.check_connection():
+                    # Try to reconnect
+                    from .ollama_client import OllamaClient
+                    self.ollama_client = OllamaClient()
+                    if not self.ollama_client.check_connection():
+                        # Still not available, fall back
+                        return self._handle_basic_conversation(message)
+                
                 # Add user message to history
                 self.ollama_client.add_to_history("user", message)
                 
