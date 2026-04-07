@@ -1,10 +1,18 @@
 import { Component } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { HttpClient } from '@angular/common/http';
+import { FormsModule } from '@angular/forms';
+import { CommonModule } from '@angular/common';
+
+interface Message {
+  role: 'user' | 'assistant';
+  content: string;
+}
 
 @Component({
   selector: 'app-chat',
   standalone: true,
-  imports: [RouterLink],
+  imports: [RouterLink, FormsModule, CommonModule],
   template: `
     <div class="chat-page">
       <header class="chat-header">
@@ -21,27 +29,25 @@ import { RouterLink } from '@angular/router';
           <p class="sidebar-kicker">Workspace</p>
           <h1>Chat Interface</h1>
           <p class="sidebar-text">
-            This screen is ready for your chatbot connection layer. The layout already
-            separates conversation history, status, and message composition.
+            Your AI-powered financial assistant. Ask questions about IFRS, GAAP,
+            tax regulations, or request calculations.
           </p>
 
           <div class="sidebar-card">
-            <p class="sidebar-card-title">Planned integration</p>
-            <ul>
-              <li>Connect send action to the local chatbot service.</li>
-              <li>Stream model responses into the conversation panel.</li>
-              <li>Display command mode and analysis metadata.</li>
-            </ul>
+            <p class="sidebar-card-title">Quick Commands</p>
+            <div class="command-list">
+              <span>/help</span>
+              <span>/calculate</span>
+              <span>/compliance</span>
+              <span>/tax</span>
+            </div>
           </div>
 
           <div class="sidebar-card">
-            <p class="sidebar-card-title">Expected commands</p>
-            <div class="command-list">
-              <span>!analyse</span>
-              <span>!summary</span>
-              <span>!explain</span>
-              <span>!ping</span>
-            </div>
+            <p class="sidebar-card-title">Status</p>
+            <span class="status-pill" [class.connected]="connected">
+              {{ connected ? 'Connected' : 'Disconnected' }}
+            </span>
           </div>
         </section>
 
@@ -52,38 +58,37 @@ import { RouterLink } from '@angular/router';
               <h2>FinSight Assistant</h2>
             </div>
 
-            <span class="status-pill">Local mode</span>
+            <span class="status-pill" [class.connected]="connected">
+              {{ connected ? 'AI Mode' : 'Local mode' }}
+            </span>
           </div>
 
           <div class="chat-thread">
-            <article class="message assistant">
+            <article class="message assistant" *ngIf="messages.length === 0">
               <p class="message-role">FinSight</p>
               <p class="message-text">
-                Ready for structured financial requests. Connect this interface to your
-                chatbot backend when the service layer is available.
+                Hello! I'm FinSight, your AI assistant for KPMG Financial Officers.
+                I can help with financial calculations, compliance questions, tax
+                regulations, and more. How can I assist you today?
               </p>
             </article>
 
-            <article class="message user">
-              <p class="message-role">User</p>
-              <p class="message-text">
-                Explain EBITDA and give the business interpretation.
-              </p>
+            <article 
+              class="message" 
+              *ngFor="let msg of messages"
+              [class.assistant]="msg.role === 'assistant'"
+              [class.user]="msg.role === 'user'"
+            >
+              <p class="message-role">{{ msg.role === 'user' ? 'You' : 'FinSight' }}</p>
+              <p class="message-text">{{ msg.content }}</p>
             </article>
 
-            <article class="message assistant">
+            <article class="message assistant" *ngIf="loading">
               <p class="message-role">FinSight</p>
-              <p class="message-text">
-                Summary: EBITDA measures operating performance before interest, taxes,
-                depreciation, and amortization.
-              </p>
-              <p class="message-text">
-                Key Insights: It helps compare core profitability across businesses with
-                different capital structures.
-              </p>
-              <p class="message-text">
-                Recommendations: Use it with margin and cash flow indicators instead of
-                treating it as a standalone view of financial health.
+              <p class="message-text typing">
+                <span class="dot"></span>
+                <span class="dot"></span>
+                <span class="dot"></span>
               </p>
             </article>
           </div>
@@ -94,11 +99,22 @@ import { RouterLink } from '@angular/router';
               id="chat-message"
               class="composer-input"
               placeholder="Type a financial request or command..."
+              [(ngModel)]="userMessage"
+              (keydown.enter)="sendMessage($event)"
+              [disabled]="loading"
             ></textarea>
 
             <div class="composer-actions">
+              <span class="composer-note">Press Enter to send</span>
               
-              <button class="send-button" type="button">Send</button>
+              <button 
+                class="send-button" 
+                type="button" 
+                (click)="sendMessage()"
+                [disabled]="loading || !userMessage.trim()"
+              >
+                {{ loading ? 'Sending...' : 'Send' }}
+              </button>
             </div>
           </div>
         </section>
@@ -395,6 +411,75 @@ import { RouterLink } from '@angular/router';
         width: 100%;
       }
     }
+
+    .typing {
+      display: flex;
+      gap: 4px;
+    }
+
+    .typing .dot {
+      width: 8px;
+      height: 8px;
+      background: var(--accent-soft);
+      border-radius: 50%;
+      animation: bounce 1.4s infinite ease-in-out both;
+    }
+
+    .typing .dot:nth-child(1) { animation-delay: -0.32s; }
+    .typing .dot:nth-child(2) { animation-delay: -0.16s; }
+
+    @keyframes bounce {
+      0%, 80%, 100% { transform: scale(0); }
+      40% { transform: scale(1); }
+    }
+
+    .send-button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
   `
 })
-export class ChatComponent {}
+export class ChatComponent {
+  userMessage = '';
+  messages: Message[] = [];
+  loading = false;
+  connected = false;
+
+  constructor(private http: HttpClient) {
+    this.checkConnection();
+  }
+
+  checkConnection() {
+    this.http.get<{ status: string }>('/api/health').subscribe({
+      next: () => this.connected = true,
+      error: () => this.connected = false
+    });
+  }
+
+  sendMessage(event?: Event) {
+    if (event) {
+      event.preventDefault();
+    }
+
+    const message = this.userMessage.trim();
+    if (!message || this.loading) return;
+
+    this.messages.push({ role: 'user', content: message });
+    this.userMessage = '';
+    this.loading = true;
+
+    this.http.post<{ response: string }>('/api/chat', { message }).subscribe({
+      next: (res) => {
+        this.messages.push({ role: 'assistant', content: res.response });
+        this.loading = false;
+      },
+      error: () => {
+        this.messages.push({ 
+          role: 'assistant', 
+          content: 'Sorry, I encountered an error. Please try again.' 
+        });
+        this.loading = false;
+      }
+    });
+  }
+}
