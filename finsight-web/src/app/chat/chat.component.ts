@@ -1,8 +1,9 @@
 import { Component } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
+import { AuthService } from '../auth/auth.service';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -21,7 +22,11 @@ interface Message {
           <span class="brand-text">FinSight</span>
         </a>
 
-        <a class="header-link" routerLink="/">Back to landing</a>
+        <div class="header-actions">
+          <span class="user-label" *ngIf="currentUser">{{ currentUser }}</span>
+          <button class="logout-button" type="button" (click)="logout()">Logout</button>
+          <a class="header-link" routerLink="/">Back to landing</a>
+        </div>
       </header>
 
       <main class="chat-layout">
@@ -173,6 +178,28 @@ interface Message {
       color: var(--text-secondary);
       text-decoration: none;
       font-weight: 600;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+
+    .user-label {
+      color: var(--text-muted);
+      font-size: 0.92rem;
+    }
+
+    .logout-button {
+      border: 1px solid rgba(173, 195, 220, 0.24);
+      border-radius: 999px;
+      padding: 9px 14px;
+      color: var(--text-primary);
+      background: rgba(10, 23, 43, 0.5);
+      cursor: pointer;
+      font-weight: 700;
     }
 
     .chat-layout {
@@ -398,6 +425,7 @@ interface Message {
 
       .chat-header,
       .chat-shell-header,
+      .header-actions,
       .composer-actions {
         flex-direction: column;
         align-items: flex-start;
@@ -444,8 +472,14 @@ export class ChatComponent {
   messages: Message[] = [];
   loading = false;
   connected = false;
+  currentUser = '';
 
-  constructor(private http: HttpClient) {
+  constructor(
+    private http: HttpClient,
+    private authService: AuthService,
+    private router: Router
+  ) {
+    this.currentUser = this.authService.getUser()?.name || this.authService.getUser()?.username || '';
     this.checkConnection();
   }
 
@@ -468,12 +502,22 @@ export class ChatComponent {
     this.userMessage = '';
     this.loading = true;
 
-    this.http.post<{ response: string }>('/api/chat', { message }).subscribe({
+    const token = this.authService.getToken();
+
+    this.http.post<{ response: string }>('/api/chat', { message }, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {}
+    }).subscribe({
       next: (res) => {
         this.messages.push({ role: 'assistant', content: res.response });
         this.loading = false;
       },
-      error: () => {
+      error: (error) => {
+        if (error.status === 401) {
+          this.authService.logout();
+          this.router.navigate(['/auth']);
+          return;
+        }
+
         this.messages.push({ 
           role: 'assistant', 
           content: 'Sorry, I encountered an error. Please try again.' 
@@ -481,5 +525,10 @@ export class ChatComponent {
         this.loading = false;
       }
     });
+  }
+
+  logout(): void {
+    this.authService.logout();
+    this.router.navigate(['/auth']);
   }
 }
