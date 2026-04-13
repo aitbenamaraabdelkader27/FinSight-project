@@ -13,7 +13,7 @@ app.use(cors());
 app.use(express.json());
 
 const PYTHON_API_URL = process.env.PYTHON_API_URL || 'http://localhost:5000';
-const ANGULAR_DIST = path.join(__dirname, '..', 'finsight-web', 'dist', 'finsight-web', 'browser');
+const ANGULAR_DIST = path.join(__dirname, 'dist', 'finsight-web', 'browser');
 
 let db = null;
 
@@ -55,13 +55,13 @@ app.post('/api/register', async (req, res) => {
       return res.status(400).json({ error: 'Password must be at least 6 characters' });
     }
     
-    const existingUser = db.getUserByUsername(username);
+    const existingUser = await db.getUserByUsername(username);
     if (existingUser) {
       return res.status(400).json({ error: 'Username already taken' });
     }
     
     const passwordHash = await bcrypt.hash(password, 10);
-    const userId = db.createUser(username, passwordHash);
+    const userId = await db.createUser(username, passwordHash);
     
     const token = generateToken(userId, username);
     
@@ -84,7 +84,7 @@ app.post('/api/login', async (req, res) => {
       return res.status(400).json({ error: 'Username and password are required' });
     }
     
-    const user = db.getUserByUsername(username);
+    const user = await db.getUserByUsername(username);
     if (!user) {
       return res.status(401).json({ error: 'Invalid username or password' });
     }
@@ -119,7 +119,7 @@ app.post('/api/chat', authMiddleware, async (req, res) => {
 
     const data = await callPythonBot(message);
     
-    db.saveChatMessage(req.user.userId, message, data.response);
+    await db.saveChatMessage(req.user.userId, message, data.response);
     
     res.json(data);
   } catch (error) {
@@ -128,9 +128,9 @@ app.post('/api/chat', authMiddleware, async (req, res) => {
   }
 });
 
-app.get('/api/chat/history', authMiddleware, (req, res) => {
+app.get('/api/chat/history', authMiddleware, async (req, res) => {
   try {
-    const history = db.getChatHistory(req.user.userId);
+    const history = await db.getChatHistory(req.user.userId);
     res.json({ history });
   } catch (error) {
     console.error('History error:', error);
@@ -138,9 +138,9 @@ app.get('/api/chat/history', authMiddleware, (req, res) => {
   }
 });
 
-app.delete('/api/chat/history', authMiddleware, (req, res) => {
+app.delete('/api/chat/history', authMiddleware, async (req, res) => {
   try {
-    db.clearChatHistory(req.user.userId);
+    await db.clearChatHistory(req.user.userId);
     res.json({ message: 'Chat history cleared' });
   } catch (error) {
     console.error('Clear history error:', error);
@@ -148,8 +148,8 @@ app.delete('/api/chat/history', authMiddleware, (req, res) => {
   }
 });
 
-app.get('/api/me', authMiddleware, (req, res) => {
-  const user = db.getUserById(req.user.userId);
+app.get('/api/me', authMiddleware, async (req, res) => {
+  const user = await db.getUserById(req.user.userId);
   if (!user) {
     return res.status(404).json({ error: 'User not found' });
   }
