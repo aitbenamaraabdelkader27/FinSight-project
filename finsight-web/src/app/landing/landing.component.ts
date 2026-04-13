@@ -17,6 +17,7 @@ import { RouterLink } from '@angular/router';
           <a href="#features">Features</a>
           <a href="#workflow">Workflow</a>
           <a href="#architecture">Architecture</a>
+          <a href="#video">Video</a>
           <a href="#reporting">Reporting</a>
         </nav>
       </header>
@@ -34,7 +35,7 @@ import { RouterLink } from '@angular/router';
 
             <div class="hero-actions">
               <a class="primary-action" href="#features">Explore the platform</a>
-              <a class="secondary-action" routerLink="/chat">Open chat interface</a>
+              <a class="secondary-action" routerLink="/auth">Open chat interface</a>
             </div>
 
             <ul class="hero-metrics" aria-label="Key product metrics">
@@ -194,6 +195,28 @@ import { RouterLink } from '@angular/router';
           </div>
         </section>
 
+        <section class="video-section" id="video">
+          <div class="section-heading">
+            <p class="section-kicker">Project presentation</p>
+            <h2>FinSight demo video.</h2>
+          </div>
+
+          <div class="video-layout">
+            <div class="video-copy">
+              <h3>Presentation video</h3>
+              <p>
+                This is the presentation video for the project.
+                
+              </p>
+            </div>
+
+            <div class="video-placeholder" aria-label="Project presentation video placeholder">
+              <p>Project presentation video coming soon</p>
+              <small>Replace this block with an embedded video or local file.</small>
+            </div>
+          </div>
+        </section>
+
         <section class="reporting-section" id="reporting">
           <div class="report-card">
             <div>
@@ -205,7 +228,7 @@ import { RouterLink } from '@angular/router';
               <p>Professional tone aligned with business reporting workflows.</p>
               <p>Minimal and readable interface for demonstrations and project delivery.</p>
               <p>Clear separation between interface, reasoning logic, and model access.</p>
-              <a class="report-link" routerLink="/chat">Go to the FinSight chat workspace</a>
+              <a class="report-link" routerLink="/auth">Go to the FinSight chat workspace</a>
             </div>
           </div>
         </section>
@@ -462,6 +485,7 @@ import { RouterLink } from '@angular/router';
     .section-grid,
     .workflow-section,
     .architecture-section,
+    .video-section,
     .reporting-section {
       margin-bottom: 72px;
     }
@@ -560,6 +584,43 @@ import { RouterLink } from '@angular/router';
       gap: 16px;
     }
 
+    .video-layout {
+      display: grid;
+      grid-template-columns: minmax(260px, 0.7fr) minmax(0, 1.3fr);
+      gap: 20px;
+      align-items: stretch;
+    }
+
+    .video-copy,
+    .video-placeholder {
+      background: rgba(8, 18, 34, 0.64);
+      border: 1px solid rgba(143, 169, 200, 0.14);
+      border-radius: 24px;
+    }
+
+    .video-copy {
+      padding: 24px;
+    }
+
+    .video-copy p {
+      color: var(--text-secondary);
+      line-height: 1.7;
+    }
+
+    .video-placeholder {
+      min-height: 320px;
+      display: grid;
+      place-items: center;
+      align-content: center;
+      gap: 12px;
+      padding: 28px;
+    }
+
+    .video-placeholder p {
+      font-size: 1.2rem;
+      font-weight: 800;
+    }
+
     .report-card {
       display: grid;
       grid-template-columns: minmax(0, 1fr) minmax(280px, 0.85fr);
@@ -591,6 +652,7 @@ import { RouterLink } from '@angular/router';
       .hero-section,
       .architecture-layout,
       .report-card,
+      .video-layout,
       .card-grid,
       .workflow-steps {
         grid-template-columns: 1fr;
