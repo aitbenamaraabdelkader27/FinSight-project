@@ -62,20 +62,28 @@ const commands = [
 // REST client for registering commands
 const rest = new REST().setToken(BOT_TOKEN);
 
-async function callPythonAPI(message) {
-  try {
-    const response = await axios.post(`${PYTHON_API_URL}/api/chat`, {
-      message: message
-    }, {
-      timeout: 30000
-    });
-    return response.data.response;
-  } catch (error) {
-    console.error('Python API error:', error.message);
-    if (error.response) {
-      return error.response.data.error || 'Error from API';
+async function callPythonAPI(message, retries = 2) {
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      const response = await axios.post(`${PYTHON_API_URL}/api/chat`, {
+        message: message
+      }, {
+        timeout: 90000
+      });
+      return response.data.response;
+    } catch (error) {
+      console.log(`API attempt ${attempt} failed: ${error.message}`);
+      if (attempt === retries) {
+        if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
+          return 'Sorry, the AI service is taking longer than expected. Please try again.';
+        }
+        if (error.response) {
+          return error.response.data.error || 'Error from API';
+        }
+        return 'Sorry, I encountered an error connecting to the AI service.';
+      }
+      await new Promise(r => setTimeout(r, 2000));
     }
-    return 'Sorry, I encountered an error connecting to the AI service.';
   }
 }
 
@@ -276,6 +284,15 @@ Prefix commands (for text chat):
     console.log('✅ Slash commands registered');
   } catch (error) {
     console.error('Failed to register commands:', error);
+  }
+
+  // Warm up Ollama with a simple request to load model into memory
+  console.log('🔄 Warming up AI service...');
+  try {
+    await axios.post(`${PYTHON_API_URL}/api/chat`, { message: 'Hello' }, { timeout: 90000 });
+    console.log('✅ AI service ready');
+  } catch (error) {
+    console.log('⚠️ AI warm-up failed, will retry on first command:', error.message);
   }
 });
 
