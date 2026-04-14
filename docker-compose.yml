@@ -21,7 +21,7 @@ services:
     networks:
       - finsight-network
 
-  # Ollama LLM (GPU enabled)
+  # Ollama LLM (GPU or CPU)
   ollama:
     image: ollama/ollama:latest
     container_name: finsight-ollama
@@ -38,16 +38,6 @@ services:
       timeout: 10s
       retries: 3
       start_period: 90s
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: 1
-              capabilities: [gpu]
-      placement:
-        constraints:
-          - node.platform.os == linux
     networks:
       - finsight-network
 
