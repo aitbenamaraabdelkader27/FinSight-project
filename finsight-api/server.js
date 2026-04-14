@@ -63,6 +63,9 @@ app.post('/api/register', async (req, res) => {
     const passwordHash = await bcrypt.hash(password, 10);
     const userId = await db.createUser(username, passwordHash);
     
+    // Create default conversation for new user
+    await db.createConversation(userId, 'General Chat');
+    
     const token = generateToken(userId, username);
     
     res.status(201).json({
@@ -107,27 +110,111 @@ app.post('/api/login', async (req, res) => {
   }
 });
 
-// ==================== Protected Endpoints ====================
+// ==================== Conversations Endpoints ====================
+
+app.get('/api/chat/conversations', authMiddleware, async (req, res) => {
+  try {
+    const conversations = await db.getConversations(req.user.userId);
+    res.json({ conversations });
+  } catch (error) {
+    console.error('Conversations error:', error);
+    res.status(500).json({ error: 'Failed to get conversations' });
+  }
+});
+
+app.post('/api/chat/conversations', authMiddleware, async (req, res) => {
+  try {
+    const { title } = req.body;
+    const defaultTitle = title || 'New Chat';
+    const conversation = await db.createConversation(req.user.userId, defaultTitle);
+    res.status(201).json({ conversation });
+  } catch (error) {
+    console.error('Create conversation error:', error);
+    res.status(500).json({ error: 'Failed to create conversation' });
+  }
+});
+
+app.get('/api/chat/conversations/:id', authMiddleware, async (req, res) => {
+  try {
+    const conversation = await db.getConversation(req.user.userId, req.params.id);
+    if (!conversation) {
+      return res.status(404).json({ error: 'Conversation not found' });
+    }
+    const messages = await db.getConversationMessages(req.user.userId, req.params.id);
+    res.json({ conversation, messages });
+  } catch (error) {
+    console.error('Get conversation error:', error);
+    res.status(500).json({ error: 'Failed to get conversation' });
+  }
+});
+
+app.delete('/api/chat/conversations/:id', authMiddleware, async (req, res) => {
+  try {
+    await db.deleteConversation(req.params.id, req.user.userId);
+    res.json({ message: 'Conversation deleted' });
+  } catch (error) {
+    console.error('Delete conversation error:', error);
+    res.status(500).json({ error: 'Failed to delete conversation' });
+  }
+});
+
+app.put('/api/chat/conversations/:id/title', authMiddleware, async (req, res) => {
+  try {
+    const { title } = req.body;
+    if (!title) {
+      return res.status(400).json({ error: 'Title is required' });
+    }
+    const conversation = await db.updateConversationTitle(req.params.id, req.user.userId, title);
+    if (!conversation) {
+      return res.status(404).json({ error: 'Conversation not found' });
+    }
+    res.json({ conversation });
+  } catch (error) {
+    console.error('Update title error:', error);
+    res.status(500).json({ error: 'Failed to update title' });
+  }
+});
+
+// ==================== Chat Endpoints ====================
 
 app.post('/api/chat', authMiddleware, async (req, res) => {
   try {
-    const { message } = req.body;
+    const { message, conversationId } = req.body;
     
     if (!message) {
       return res.status(400).json({ error: 'Message is required' });
     }
 
+    let convId = conversationId;
+
+    // Get or create conversation
+    if (!convId) {
+      const conv = await db.getOrCreateDefaultConversation(req.user.userId);
+      convId = conv.id;
+    }
+
+    // Auto-update title if first message in conversation
+    const existingMessages = await db.getConversationMessages(req.user.userId, convId);
+    if (existingMessages.length === 0) {
+      const title = message.length > 50 ? message.substring(0, 50) + '...' : message;
+      await db.updateConversationTitle(convId, req.user.userId, title);
+    }
+
     const data = await callPythonBot(message);
     
-    await db.saveChatMessage(req.user.userId, message, data.response);
+    // Save user message
+    await db.saveChatMessage(req.user.userId, message, data.response, convId, 'user');
+    // Save assistant response
+    await db.saveChatMessage(req.user.userId, 'FinSight', data.response, convId, 'assistant');
     
-    res.json(data);
+    res.json({ ...data, conversationId: convId });
   } catch (error) {
     console.error('Bot error:', error.message);
     res.status(500).json({ error: 'Failed to get response from bot' });
   }
 });
 
+// Backward compatibility - Get chat history
 app.get('/api/chat/history', authMiddleware, async (req, res) => {
   try {
     const history = await db.getChatHistory(req.user.userId);
@@ -138,6 +225,7 @@ app.get('/api/chat/history', authMiddleware, async (req, res) => {
   }
 });
 
+// Backward compatibility - Clear chat history
 app.delete('/api/chat/history', authMiddleware, async (req, res) => {
   try {
     await db.clearChatHistory(req.user.userId);
@@ -189,20 +277,24 @@ initDb().then(database => {
 ✅ Server running on: http://localhost:${PORT}
 📁 Frontend served from: ${ANGULAR_DIST}
 🔗 Python API: ${PYTHON_API_URL}
-📀 Database: SQLite (sql.js)
+📀 Database: PostgreSQL (conversations + messages)
 
 Auth Endpoints:
   POST /api/register - Create new account
-  POST /api/login  - Login and get token
+  POST /api/login   - Login and get token
 
-Protected Endpoints (requires JWT):
-  POST /api/chat - Send message to bot
-  GET  /api/chat/history - Get chat history
-  DELETE /api/chat/history - Clear history
-  GET  /api/me - Get current user
+Conversations (ChatGPT-style):
+  GET    /api/chat/conversations        - List all conversations
+  POST   /api/chat/conversations        - Create new conversation
+  GET    /api/chat/conversations/:id    - Get conversation + messages
+  DELETE /api/chat/conversations/:id    - Delete conversation
+  PUT    /api/chat/conversations/:id/title - Update title
 
-Note: Make sure the Python API is running:
-  cd finsight-bot && python3 api.py
+Chat Endpoints (requires JWT):
+  POST   /api/chat           - Send message
+  GET    /api/chat/history  - Get chat history (backward compat)
+  DELETE /api/chat/history - Clear history (backward compat)
+  GET    /api/me            - Get current user
 `);
   });
 }).catch(err => {

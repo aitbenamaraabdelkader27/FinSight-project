@@ -12,7 +12,6 @@ async function initializeDatabase() {
     connectionTimeoutMillis: 2000,
   });
 
-  // Test connection
   try {
     const client = await pool.connect();
     console.log('[DB] Connected to PostgreSQL');
@@ -25,13 +24,15 @@ async function initializeDatabase() {
   try {
     await pool.query(`
       SELECT table_name FROM information_schema.tables 
-      WHERE table_schema = 'public' AND table_name IN ('users', 'chat_history')
+      WHERE table_schema = 'public' AND table_name IN ('users', 'conversations', 'messages')
     `);
     console.log('[DB] Database tables verified');
   } catch (error) {
     console.log('[DB] Tables will be created on first use');
   }
 }
+
+// ==================== Users ====================
 
 function createUser(username, passwordHash) {
   return pool.query(
@@ -54,17 +55,93 @@ function getUserById(id) {
   ).then(result => result.rows[0] || null);
 }
 
-function saveChatMessage(userId, message, response) {
+// ==================== Conversations ====================
+
+function createConversation(userId, title = 'New Chat') {
   return pool.query(
-    'INSERT INTO chat_history (user_id, message, response) VALUES ($1, $2, $3)',
-    [userId, message, response]
+    'INSERT INTO conversations (user_id, title) VALUES ($1, $2) RETURNING *',
+    [userId, title]
+  ).then(result => result.rows[0]);
+}
+
+function getConversations(userId) {
+  return pool.query(
+    `SELECT c.*, 
+            (SELECT COUNT(*) FROM messages WHERE conversation_id = c.id) as message_count
+     FROM conversations c 
+     WHERE c.user_id = $1 
+     ORDER BY c.updated_at DESC`,
+    [userId]
+  ).then(result => result.rows);
+}
+
+function getConversation(userId, conversationId) {
+  return pool.query(
+    'SELECT * FROM conversations WHERE id = $1 AND user_id = $2',
+    [conversationId, userId]
+  ).then(result => result.rows[0] || null);
+}
+
+function updateConversationTitle(conversationId, userId, title) {
+  return pool.query(
+    'UPDATE conversations SET title = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2 AND user_id = $3 RETURNING *',
+    [title, conversationId, userId]
+  ).then(result => result.rows[0]);
+}
+
+function deleteConversation(conversationId, userId) {
+  return pool.query(
+    'DELETE FROM conversations WHERE id = $1 AND user_id = $2',
+    [conversationId, userId]
   );
 }
 
+function getOrCreateDefaultConversation(userId) {
+  return pool.query(
+    'SELECT * FROM conversations WHERE user_id = $1 ORDER BY updated_at DESC LIMIT 1',
+    [userId]
+  ).then(result => {
+    if (result.rows[0]) {
+      return result.rows[0];
+    }
+    return createConversation(userId, 'General Chat');
+  });
+}
+
+// ==================== Messages ====================
+
+function saveChatMessage(userId, message, response, conversationId, role = 'user') {
+  if (!conversationId) {
+    return Promise.resolve(null);
+  }
+  
+  return pool.query(
+    'UPDATE conversations SET updated_at = CURRENT_TIMESTAMP WHERE id = $1',
+    [conversationId]
+  ).then(() => {
+    return pool.query(
+      'INSERT INTO messages (user_id, message, response, conversation_id, role) VALUES ($1, $2, $3, $4, $5)',
+      [userId, message, response, conversationId, role]
+    );
+  });
+}
+
+function getConversationMessages(userId, conversationId, limit = 100) {
+  return pool.query(
+    `SELECT message, response, role, created_at 
+     FROM messages 
+     WHERE user_id = $1 AND conversation_id = $2 
+     ORDER BY created_at ASC 
+     LIMIT $3`,
+    [userId, conversationId, limit]
+  ).then(result => result.rows);
+}
+
+// Backward compatibility - getChatHistory
 function getChatHistory(userId, limit = 50) {
   return pool.query(
-    `SELECT message, response, created_at 
-     FROM chat_history 
+    `SELECT message, response, role, created_at 
+     FROM messages 
      WHERE user_id = $1 
      ORDER BY created_at DESC 
      LIMIT $2`,
@@ -72,11 +149,9 @@ function getChatHistory(userId, limit = 50) {
   ).then(result => result.rows);
 }
 
+// Backward compatibility - clearChatHistory
 function clearChatHistory(userId) {
-  return pool.query(
-    'DELETE FROM chat_history WHERE user_id = $1',
-    [userId]
-  );
+  return pool.query('DELETE FROM messages WHERE user_id = $1', [userId]);
 }
 
 async function closeDatabase() {
@@ -90,7 +165,14 @@ module.exports = {
   createUser,
   getUserByUsername,
   getUserById,
+  createConversation,
+  getConversations,
+  getConversation,
+  updateConversationTitle,
+  deleteConversation,
+  getOrCreateDefaultConversation,
   saveChatMessage,
+  getConversationMessages,
   getChatHistory,
   clearChatHistory,
   closeDatabase
