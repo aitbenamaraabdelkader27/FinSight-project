@@ -180,9 +180,10 @@ All AI processing runs locally using Ollama - no external API calls or data leav
 
 ### Required
 - **Docker** and **Docker Compose**
-- **GPU** (one of the following):
-  - **AMD GPU** with ROCm support (e.g., RX 6000/7000 series)
-  - **NVIDIA GPU** with CUDA support
+- **One of the following GPU options**:
+  - **NVIDIA GPU** with CUDA support (e.g., RTX 5070 Ti, RTX 4090)
+  - **AMD Discrete GPU** with ROCm support (e.g., RX 7900 XTX)
+  - **AMD APU** (Integrated Graphics - e.g., Ryzen 7 7730U with Vega)
   - **No GPU** (CPU-only mode, slower performance)
 
 ### Optional (for local development)
@@ -190,7 +191,7 @@ All AI processing runs locally using Ollama - no external API calls or data leav
 - Python 3.12+
 - PostgreSQL 15+
 
-> **Note:** For GPU requirements, see [GPU Compatibility](#gpu-compatibility) section.
+> **Note:** For detailed GPU requirements and compatibility, see [GPU Compatibility](#gpu-compatibility) section.
 
 ---
 
@@ -347,17 +348,23 @@ deploy:
 
 ## GPU Compatibility
 
-FinSight supports NVIDIA, AMD, and CPU-only deployments with Mistral Nemo (12B parameters).
+FinSight supports NVIDIA, AMD discrete GPUs, AMD APUs (integrated graphics), and CPU-only deployments.
 
 | GPU Type | Compose File | Ollama Image | Notes |
 |----------|--------------|--------------|-------|
-| AMD GPU | `docker-compose.amd.yml` | `ollama/ollama:rocm:latest` | Uses ROCm backend |
-| NVIDIA GPU | `docker-compose.gpu.yml` | `ollama/ollama:latest` | Uses CUDA backend |
-| CPU Only | `docker-compose.yml` | `ollama/ollama:latest` | Slower performance |
+| **AMD APU** (Integrated) | `docker-compose.amd.yml` | `rjmalagon/ollama-linux-amd-apu` | For Ryzen 7730U, Vega graphics |
+| **AMD Discrete GPU** | `docker-compose.amd.yml` | `ollama/ollama:rocm:latest` | RX 6000/7000 series |
+| **NVIDIA GPU** | `docker-compose.gpu.yml` | `ollama/ollama:latest` | CUDA backend |
+| **CPU Only** | `docker-compose.yml` | `ollama/ollama:latest` | No GPU required |
 
 ### Usage
 
-**AMD GPU:**
+**AMD APU (Integrated Graphics - e.g., Ryzen 7 7730U):**
+```bash
+docker compose -f docker-compose.amd.yml up -d
+```
+
+**AMD Discrete GPU:**
 ```bash
 docker compose -f docker-compose.amd.yml up -d
 ```
@@ -367,7 +374,7 @@ docker compose -f docker-compose.amd.yml up -d
 docker compose -f docker-compose.gpu.yml up -d
 ```
 
-**CPU Only:**
+**CPU Only (no GPU):**
 ```bash
 docker compose up -d
 ```
