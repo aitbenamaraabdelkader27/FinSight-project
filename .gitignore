@@ -1,0 +1,10 @@
+finsight-web/node_modules
+finsight-web/package-lock.json
+finsight-bot/src/__pycache__
+finsight-bot/src/chatbot/__pycache__
+finsight-bot/.env
+finsight-discord/.env
+venv/
+*.pyc
+__pycache__/
+.env
