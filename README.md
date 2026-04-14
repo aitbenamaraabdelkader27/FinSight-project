@@ -180,13 +180,17 @@ All AI processing runs locally using Ollama - no external API calls or data leav
 
 ### Required
 - **Docker** and **Docker Compose**
-- **NVIDIA GPU** with CUDA support (for Ollama acceleration)
-- **nvidia-docker** runtime configured
+- **GPU** (one of the following):
+  - **AMD GPU** with ROCm support (e.g., RX 6000/7000 series)
+  - **NVIDIA GPU** with CUDA support
+  - **No GPU** (CPU-only mode, slower performance)
 
 ### Optional (for local development)
 - Node.js 20+
 - Python 3.12+
 - PostgreSQL 15+
+
+> **Note:** For GPU requirements, see [GPU Compatibility](#gpu-compatibility) section.
 
 ---
 
@@ -338,6 +342,37 @@ deploy:
           count: 1
           capabilities: [gpu]
 ```
+
+---
+
+## GPU Compatibility
+
+FinSight supports NVIDIA, AMD, and CPU-only deployments with Mistral Nemo (12B parameters).
+
+| GPU Type | Compose File | Ollama Image | Notes |
+|----------|--------------|--------------|-------|
+| AMD GPU | `docker-compose.amd.yml` | `ollama/ollama:rocm:latest` | Uses ROCm backend |
+| NVIDIA GPU | `docker-compose.gpu.yml` | `ollama/ollama:latest` | Uses CUDA backend |
+| CPU Only | `docker-compose.yml` | `ollama/ollama:latest` | Slower performance |
+
+### Usage
+
+**AMD GPU:**
+```bash
+docker compose -f docker-compose.amd.yml up -d
+```
+
+**NVIDIA GPU:**
+```bash
+docker compose -f docker-compose.gpu.yml up -d
+```
+
+**CPU Only:**
+```bash
+docker compose up -d
+```
+
+> **Note:** The first request after starting Ollama may take 30-90 seconds as the model loads into memory.
 
 ---
 
