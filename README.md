@@ -29,6 +29,8 @@
 - [API Endpoints](#api-endpoints)
 - [Discord Commands](#discord-commands)
 - [Knowledge Base](#knowledge-base)
+- [Video Presentation](#video-presentation)
+- [Chat Conversations](#chat-conversations)
 - [Troubleshooting](#troubleshooting)
 - [Environment Variables](#environment-variables)
 - [License](#license)
@@ -115,9 +117,16 @@ All AI processing runs locally using Ollama - no external API calls or data leav
 
 ### AI-Powered Chat
 - Local LLM using Ollama (Mistral Nemo 12B)
-- GPU-accelerated inference (NVIDIA)
+- GPU-accelerated inference (NVIDIA, AMD, or CPU)
 - Conversation history with context
 - Fallback responses when LLM unavailable
+
+### ChatGPT-Style Conversations
+- Sidebar with conversation list
+- Create new conversations with "+ New Chat" button
+- Switch between conversations
+- Delete conversations with confirmation
+- Auto-generated titles from first message
 
 ### Financial Calculations
 - **Depreciation** (straight-line, declining balance, sum-of-years)
@@ -146,6 +155,7 @@ All AI processing runs locally using Ollama - no external API calls or data leav
 - Dark theme design
 - Real-time chat interface
 - Connection status indicator
+- **Video presentation** embedded on landing page
 
 ### Discord Integration
 - Slash commands (`/chat`, `/calculate`, `/compliance`, `/tax`)
@@ -157,6 +167,7 @@ All AI processing runs locally using Ollama - no external API calls or data leav
 - Secure password hashing (bcrypt)
 - Protected API endpoints
 - Chat history per user
+- Conversations per user
 
 ---
 
@@ -281,11 +292,15 @@ JWT_SECRET=your-secret-key-change-in-production
 4. Copy the token
 5. Enable "Message Content" intent in Bot settings
 
-### 3. Start Services
+### 3. Choose Your GPU Configuration
 
-```bash
-docker compose up -d
-```
+| GPU Type | Command |
+|----------|---------|
+| **NVIDIA GPU** | `docker compose -f docker-compose.gpu.yml up -d` |
+| **AMD GPU/APU** | `docker compose -f docker-compose.amd.yml up -d` |
+| **CPU Only** | `docker compose up -d` |
+
+> **Note:** First run may take 30-90 seconds as the model loads into GPU memory.
 
 This will start all 5 services:
 - `finsight-postgres` - PostgreSQL database (port 5432)
@@ -298,12 +313,19 @@ This will start all 5 services:
 
 | Service | URL | Description |
 |---------|-----|-------------|
-| Web UI | http://localhost:3000 | Angular frontend |
+| Web UI | http://localhost:3000 | Angular frontend with video |
+| Chat | http://localhost:3000/chat | Chat with conversations |
 | API | http://localhost:3000/api | Express API |
 | Ollama | http://localhost:11434 | LLM API |
-| Bot | http://localhost:5000 | Python API |
 
-### 5. Verify Status
+### 5. After First Login
+
+1. Go to **http://localhost:3000/auth** to register an account
+2. Go to **http://localhost:3000/chat** to start chatting
+3. Use **"+ New Chat"** button to create new conversations
+4. The landing page includes a **video presentation**
+
+### 6. Verify Status
 
 ```bash
 # Check container status
