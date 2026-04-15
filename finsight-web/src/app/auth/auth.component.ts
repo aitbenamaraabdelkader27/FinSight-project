@@ -12,7 +12,7 @@ import { AuthService } from './auth.service';
     <div class="auth-page">
       <header class="auth-header">
         <a class="brand" routerLink="/" aria-label="Back to FinSight landing page">
-          <span class="brand-mark">FS</span>
+          <img class="brand-logo" src="assets/logo/FinSight.jpg" alt="FinSight logo">
           <span class="brand-text">FinSight</span>
         </a>
 
@@ -162,15 +162,12 @@ import { AuthService } from './auth.service';
       letter-spacing: 0.04em;
     }
 
-    .brand-mark {
+    .brand-logo {
       width: 42px;
       height: 42px;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      border-radius: 14px;
-      background: linear-gradient(135deg, #d8f3ff, #7fc7ff);
-      color: #072039;
+      display: block;
+      border-radius: 8px;
+      object-fit: cover;
       box-shadow: 0 10px 30px rgba(91, 188, 255, 0.18);
     }
 

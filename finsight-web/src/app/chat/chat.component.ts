@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
@@ -10,20 +10,6 @@ interface Message {
   content: string;
 }
 
-interface Conversation {
-  id: number;
-  user_id: number;
-  title: string;
-  created_at: string;
-  updated_at: string;
-  message_count: string;
-}
-
-interface ConversationResponse {
-  conversation: Conversation;
-  messages: Array<{ message: string; response: string; role: string; created_at: string }>;
-}
-
 @Component({
   selector: 'app-chat',
   standalone: true,
@@ -32,7 +18,7 @@ interface ConversationResponse {
     <div class="chat-page">
       <header class="chat-header">
         <a class="brand" routerLink="/" aria-label="Back to FinSight landing page">
-          <span class="brand-mark">FS</span>
+          <img class="brand-logo" src="assets/logo/FinSight.jpg" alt="FinSight logo">
           <span class="brand-text">FinSight</span>
         </a>
 
@@ -51,29 +37,6 @@ interface ConversationResponse {
             Your AI-powered financial assistant. Ask questions about IFRS, GAAP,
             tax regulations, or request calculations.
           </p>
-
-          <button class="new-chat-btn" (click)="createConversation()">
-            + New Chat
-          </button>
-
-          <div class="conversations-section">
-            <p class="conversations-title">Conversations</p>
-            <div class="conversations-list">
-              <div 
-                *ngFor="let conv of conversations"
-                class="conversation-item"
-                [class.active]="conv.id === currentConversationId"
-                (click)="selectConversation(conv.id)"
-              >
-                <span class="conv-title">{{ conv.title }}</span>
-                <button 
-                  class="delete-btn" 
-                  (click)="confirmDelete(conv.id); $event.stopPropagation()"
-                  title="Delete conversation"
-                >🗑</button>
-              </div>
-            </div>
-          </div>
 
           <div class="sidebar-card">
             <p class="sidebar-card-title">Quick Commands</p>
@@ -97,7 +60,7 @@ interface ConversationResponse {
           <div class="chat-shell-header">
             <div>
               <p class="chat-shell-kicker">Session</p>
-              <h2>{{ currentConversationTitle }}</h2>
+              <h2>FinSight Assistant</h2>
             </div>
 
             <span class="status-pill" [class.connected]="connected">
@@ -161,16 +124,6 @@ interface ConversationResponse {
           </div>
         </section>
       </main>
-
-      <div class="confirm-overlay" *ngIf="showDeleteConfirm">
-        <div class="confirm-dialog">
-          <p>Delete this conversation?</p>
-          <div class="confirm-actions">
-            <button class="cancel-btn" (click)="showDeleteConfirm = false">Cancel</button>
-            <button class="delete-confirm-btn" (click)="deleteConversation()">Delete</button>
-          </div>
-        </div>
-      </div>
     </div>
   `,
   styles: `
@@ -209,15 +162,12 @@ interface ConversationResponse {
       letter-spacing: 0.04em;
     }
 
-    .brand-mark {
+    .brand-logo {
       width: 42px;
       height: 42px;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      border-radius: 14px;
-      background: linear-gradient(135deg, #d8f3ff, #7fc7ff);
-      color: #072039;
+      display: block;
+      border-radius: 8px;
+      object-fit: cover;
       box-shadow: 0 10px 30px rgba(91, 188, 255, 0.18);
     }
 
@@ -300,94 +250,6 @@ interface ConversationResponse {
       color: var(--text-secondary);
       line-height: 1.7;
       margin-bottom: 22px;
-    }
-
-    .new-chat-btn {
-      width: 100%;
-      padding: 14px 16px;
-      background: #238636;
-      color: white;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      font-weight: 600;
-      font-size: 0.95rem;
-      margin-bottom: 20px;
-      transition: background 0.2s;
-    }
-
-    .new-chat-btn:hover {
-      background: #2ea043;
-    }
-
-    .conversations-section {
-      margin-bottom: 20px;
-    }
-
-    .conversations-title {
-      font-size: 0.8rem;
-      text-transform: uppercase;
-      letter-spacing: 0.12em;
-      color: var(--text-muted);
-      margin-bottom: 10px;
-    }
-
-    .conversations-list {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-      max-height: 200px;
-      overflow-y: auto;
-    }
-
-    .conversation-item {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 10px 12px;
-      border-radius: 8px;
-      cursor: pointer;
-      background: rgba(255, 255, 255, 0.03);
-      transition: background 0.2s;
-    }
-
-    .conversation-item:hover {
-      background: rgba(255, 255, 255, 0.1);
-    }
-
-    .conversation-item.active {
-      background: rgba(56, 139, 253, 0.4);
-    }
-
-    .conv-title {
-      font-size: 0.9rem;
-      color: var(--text-secondary);
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      flex: 1;
-    }
-
-    .conversation-item.active .conv-title {
-      color: var(--text-primary);
-    }
-
-    .delete-btn {
-      background: none;
-      border: none;
-      cursor: pointer;
-      font-size: 0.9rem;
-      opacity: 0;
-      transition: opacity 0.2s;
-      padding: 4px;
-    }
-
-    .conversation-item:hover .delete-btn {
-      opacity: 0.7;
-    }
-
-    .delete-btn:hover {
-      opacity: 1;
     }
 
     .sidebar-card {
@@ -600,67 +462,14 @@ interface ConversationResponse {
       opacity: 0.6;
       cursor: not-allowed;
     }
-
-    .confirm-overlay {
-      position: fixed;
-      inset: 0;
-      background: rgba(0, 0, 0, 0.7);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 1000;
-    }
-
-    .confirm-dialog {
-      background: rgba(8, 18, 34, 0.95);
-      padding: 24px;
-      border-radius: 16px;
-      border: 1px solid rgba(255, 255, 255, 0.2);
-      text-align: center;
-    }
-
-    .confirm-dialog p {
-      margin-bottom: 20px;
-      font-size: 1.1rem;
-    }
-
-    .confirm-actions {
-      display: flex;
-      gap: 12px;
-      justify-content: center;
-    }
-
-    .cancel-btn {
-      padding: 10px 20px;
-      border-radius: 8px;
-      border: 1px solid rgba(255, 255, 255, 0.2);
-      background: transparent;
-      color: var(--text-primary);
-      cursor: pointer;
-    }
-
-    .delete-confirm-btn {
-      padding: 10px 20px;
-      border-radius: 8px;
-      border: none;
-      background: #dc2626;
-      color: white;
-      cursor: pointer;
-    }
   `
 })
-export class ChatComponent implements OnInit {
+export class ChatComponent {
   userMessage = '';
   messages: Message[] = [];
   loading = false;
   connected = false;
   currentUser = '';
-  
-  conversations: Conversation[] = [];
-  currentConversationId: number | null = null;
-  currentConversationTitle = 'FinSight Assistant';
-  showDeleteConfirm = false;
-  confirmConvId: number | null = null;
 
   constructor(
     private http: HttpClient,
@@ -671,93 +480,11 @@ export class ChatComponent implements OnInit {
     this.checkConnection();
   }
 
-  ngOnInit() {
-    this.loadConversations();
-  }
-
-  getHeaders(): { [header: string]: string } {
-    const token = this.authService.getToken();
-    return token ? { Authorization: `Bearer ${token}` } : {};
-  }
-
   checkConnection() {
     this.http.get<{ status: string }>('/api/health').subscribe({
       next: () => this.connected = true,
       error: () => this.connected = false
     });
-  }
-
-  loadConversations() {
-    this.http.get<{ conversations: Conversation[] }>('/api/chat/conversations', { headers: this.getHeaders() })
-      .subscribe({
-        next: (res) => {
-          this.conversations = res.conversations;
-          if (this.conversations.length > 0 && !this.currentConversationId) {
-            this.selectConversation(this.conversations[0].id);
-          }
-        },
-        error: (err) => console.error('Failed to load conversations:', err)
-      });
-  }
-
-  selectConversation(id: number) {
-    this.currentConversationId = id;
-    const conv = this.conversations.find(c => c.id === id);
-    this.currentConversationTitle = conv ? conv.title : 'FinSight Assistant';
-
-    this.http.get<ConversationResponse>(`/api/chat/conversations/${id}`, { headers: this.getHeaders() })
-      .subscribe({
-        next: (res) => {
-          this.messages = res.messages.map((m: { message: string; response: string; role: string }) => ({
-            role: m.role as 'user' | 'assistant',
-            content: m.role === 'user' ? m.message : m.response
-          }));
-          this.currentConversationTitle = res.conversation.title;
-        },
-        error: (err) => console.error('Failed to load conversation:', err)
-      });
-  }
-
-  createConversation() {
-    this.http.post<{ conversation: Conversation }>('/api/chat/conversations', 
-      { title: 'New Chat' },
-      { headers: this.getHeaders() }
-    ).subscribe({
-      next: (res) => {
-        this.conversations.unshift(res.conversation);
-        this.selectConversation(res.conversation.id);
-      },
-      error: (err) => console.error('Failed to create conversation:', err)
-    });
-  }
-
-  confirmDelete(id: number) {
-    this.confirmConvId = id;
-    this.showDeleteConfirm = true;
-  }
-
-  deleteConversation() {
-    if (!this.confirmConvId) return;
-    
-    const idToDelete = this.confirmConvId;
-    this.showDeleteConfirm = false;
-    this.confirmConvId = null;
-
-    this.http.delete<{ message: string }>(`/api/chat/conversations/${idToDelete}`, { headers: this.getHeaders() })
-      .subscribe({
-        next: () => {
-          this.conversations = this.conversations.filter(c => c.id !== idToDelete);
-          if (this.currentConversationId === idToDelete) {
-            this.messages = [];
-            this.currentConversationId = null;
-            this.currentConversationTitle = 'FinSight Assistant';
-            if (this.conversations.length > 0) {
-              this.selectConversation(this.conversations[0].id);
-            }
-          }
-        },
-        error: (err) => console.error('Failed to delete conversation:', err)
-      });
   }
 
   sendMessage(event?: Event) {
@@ -772,19 +499,14 @@ export class ChatComponent implements OnInit {
     this.userMessage = '';
     this.loading = true;
 
-    const payload: any = { message };
-    if (this.currentConversationId) {
-      payload.conversationId = this.currentConversationId;
-    }
+    const token = this.authService.getToken();
 
-    this.http.post<{ response: string; conversationId: number }>('/api/chat', payload, {
-      headers: this.getHeaders()
+    this.http.post<{ response: string }>('/api/chat', { message }, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {}
     }).subscribe({
       next: (res) => {
         this.messages.push({ role: 'assistant', content: res.response });
         this.loading = false;
-        this.currentConversationId = res.conversationId;
-        this.loadConversations();
       },
       error: (error) => {
         if (error.status === 401) {
