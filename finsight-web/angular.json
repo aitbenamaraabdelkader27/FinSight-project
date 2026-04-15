@@ -51,6 +51,11 @@
               "src/favicon.ico",
               "src/assets",
               {
+                "glob": "**/*",
+                "input": "src/assets",
+                "output": "assets"
+              },
+              {
                 "glob": "FinSight.jpg",
                 "input": "src/app/landing/logo",
                 "output": "assets/logo"

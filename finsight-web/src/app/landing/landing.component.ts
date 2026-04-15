@@ -210,9 +210,11 @@ import { RouterLink } from '@angular/router';
               </p>
             </div>
 
-            <div class="video-placeholder" aria-label="Project presentation video placeholder">
-              <p>Project presentation video coming soon</p>
-              <small>Replace this block with an embedded video or local file.</small>
+            <div class="video-placeholder" aria-label="Project presentation video">
+              <video controls width="100%" style="max-width: 800px; border-radius: 12px;">
+                <source src="assets/finsight_presentation.mp4" type="video/mp4">
+                Your browser does not support the video tag.
+              </video>
             </div>
           </div>
         </section>
