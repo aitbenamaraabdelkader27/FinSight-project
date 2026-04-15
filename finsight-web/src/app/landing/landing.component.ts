@@ -9,7 +9,7 @@ import { RouterLink } from '@angular/router';
     <div class="page-shell">
       <header class="topbar">
         <a class="brand" href="#hero" aria-label="FinSight home">
-          <span class="brand-mark">FS</span>
+          <img class="brand-logo" src="assets/logo/FinSight.jpg" alt="FinSight logo">
           <span class="brand-text">FinSight</span>
         </a>
 
@@ -210,9 +210,11 @@ import { RouterLink } from '@angular/router';
               </p>
             </div>
 
-            <div class="video-placeholder" aria-label="Project presentation video placeholder">
-              <p>Project presentation video coming soon</p>
-              <small>Replace this block with an embedded video or local file.</small>
+            <div class="video-placeholder" aria-label="Project presentation video">
+              <video controls width="100%" style="max-width: 800px; border-radius: 12px;">
+                <source src="assets/finsight_presentation.mp4" type="video/mp4">
+                Your browser does not support the video tag.
+              </video>
             </div>
           </div>
         </section>
@@ -273,15 +275,12 @@ import { RouterLink } from '@angular/router';
       letter-spacing: 0.04em;
     }
 
-    .brand-mark {
+    .brand-logo {
       width: 42px;
       height: 42px;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      border-radius: 14px;
-      background: linear-gradient(135deg, #d8f3ff, #7fc7ff);
-      color: #072039;
+      display: block;
+      border-radius: 8px;
+      object-fit: cover;
       box-shadow: 0 10px 30px rgba(91, 188, 255, 0.18);
     }
 

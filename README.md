@@ -29,6 +29,8 @@
 - [API Endpoints](#api-endpoints)
 - [Discord Commands](#discord-commands)
 - [Knowledge Base](#knowledge-base)
+- [Video Presentation](#video-presentation)
+- [Chat Conversations](#chat-conversations)
 - [Troubleshooting](#troubleshooting)
 - [Environment Variables](#environment-variables)
 - [License](#license)
@@ -115,9 +117,16 @@ All AI processing runs locally using Ollama - no external API calls or data leav
 
 ### AI-Powered Chat
 - Local LLM using Ollama (Mistral Nemo 12B)
-- GPU-accelerated inference (NVIDIA)
+- GPU-accelerated inference (NVIDIA, AMD, or CPU)
 - Conversation history with context
 - Fallback responses when LLM unavailable
+
+### ChatGPT-Style Conversations
+- Sidebar with conversation list
+- Create new conversations with "+ New Chat" button
+- Switch between conversations
+- Delete conversations with confirmation
+- Auto-generated titles from first message
 
 ### Financial Calculations
 - **Depreciation** (straight-line, declining balance, sum-of-years)
@@ -146,6 +155,7 @@ All AI processing runs locally using Ollama - no external API calls or data leav
 - Dark theme design
 - Real-time chat interface
 - Connection status indicator
+- **Video presentation** embedded on landing page
 
 ### Discord Integration
 - Slash commands (`/chat`, `/calculate`, `/compliance`, `/tax`)
@@ -157,6 +167,7 @@ All AI processing runs locally using Ollama - no external API calls or data leav
 - Secure password hashing (bcrypt)
 - Protected API endpoints
 - Chat history per user
+- Conversations per user
 
 ---
 
@@ -180,13 +191,18 @@ All AI processing runs locally using Ollama - no external API calls or data leav
 
 ### Required
 - **Docker** and **Docker Compose**
-- **NVIDIA GPU** with CUDA support (for Ollama acceleration)
-- **nvidia-docker** runtime configured
+- **One of the following GPU options**:
+  - **NVIDIA GPU** with CUDA support (e.g., RTX 5070 Ti, RTX 4090)
+  - **AMD Discrete GPU** with ROCm support (e.g., RX 7900 XTX)
+  - **AMD APU** (Integrated Graphics - e.g., Ryzen 7 7730U with Vega)
+  - **No GPU** (CPU-only mode, slower performance)
 
 ### Optional (for local development)
 - Node.js 20+
 - Python 3.12+
 - PostgreSQL 15+
+
+> **Note:** For detailed GPU requirements and compatibility, see [GPU Compatibility](#gpu-compatibility) section.
 
 ---
 
@@ -276,11 +292,15 @@ JWT_SECRET=your-secret-key-change-in-production
 4. Copy the token
 5. Enable "Message Content" intent in Bot settings
 
-### 3. Start Services
+### 3. Choose Your GPU Configuration
 
-```bash
-docker compose up -d
-```
+| GPU Type | Command |
+|----------|---------|
+| **NVIDIA GPU** | `docker compose -f docker-compose.gpu.yml up -d` |
+| **AMD GPU/APU** | `docker compose -f docker-compose.amd.yml up -d` |
+| **CPU Only** | `docker compose up -d` |
+
+> **Note:** First run may take 30-90 seconds as the model loads into GPU memory.
 
 This will start all 5 services:
 - `finsight-postgres` - PostgreSQL database (port 5432)
@@ -293,12 +313,21 @@ This will start all 5 services:
 
 | Service | URL | Description |
 |---------|-----|-------------|
-| Web UI | http://localhost:3000 | Angular frontend |
+| Web UI | http://localhost:3000 | Angular frontend with video |
+| Chat | http://localhost:3000/chat | Chat with conversations |
 | API | http://localhost:3000/api | Express API |
 | Ollama | http://localhost:11434 | LLM API |
-| Bot | http://localhost:5000 | Python API |
 
-### 5. Verify Status
+> **Note:** When building the Angular frontend manually (outside Docker), use `npm run build` in the `finsight-web` directory, not `npx @angular/cli@17 build`, to prevent UI state reset issues.
+
+### 5. After First Login
+
+1. Go to **http://localhost:3000/auth** to register an account
+2. Go to **http://localhost:3000/chat** to start chatting
+3. Use the **"New Chat"** button (now in deep blue gradient to match site theme) to create new conversations
+4. The landing page includes a **video presentation** demonstrating FinSight's features
+
+### 6. Verify Status
 
 ```bash
 # Check container status
@@ -338,6 +367,43 @@ deploy:
           count: 1
           capabilities: [gpu]
 ```
+
+---
+
+## GPU Compatibility
+
+FinSight supports NVIDIA, AMD discrete GPUs, AMD APUs (integrated graphics), and CPU-only deployments.
+
+| GPU Type | Compose File | Ollama Image | Notes |
+|----------|--------------|--------------|-------|
+| **AMD APU** (Integrated) | `docker-compose.amd.yml` | `rjmalagon/ollama-linux-amd-apu` | For Ryzen 7730U, Vega graphics |
+| **AMD Discrete GPU** | `docker-compose.amd.yml` | `ollama/ollama:rocm:latest` | RX 6000/7000 series |
+| **NVIDIA GPU** | `docker-compose.gpu.yml` | `ollama/ollama:latest` | CUDA backend |
+| **CPU Only** | `docker-compose.yml` | `ollama/ollama:latest` | No GPU required |
+
+### Usage
+
+**AMD APU (Integrated Graphics - e.g., Ryzen 7 7730U):**
+```bash
+docker compose -f docker-compose.amd.yml up -d
+```
+
+**AMD Discrete GPU:**
+```bash
+docker compose -f docker-compose.amd.yml up -d
+```
+
+**NVIDIA GPU:**
+```bash
+docker compose -f docker-compose.gpu.yml up -d
+```
+
+**CPU Only (no GPU):**
+```bash
+docker compose up -d
+```
+
+> **Note:** The first request after starting Ollama may take 30-90 seconds as the model loads into memory.
 
 ---
 
@@ -424,6 +490,15 @@ DISCORD_BOT_TOKEN=your_token PYTHON_API_URL=http://localhost:5000 node bot.js
 | GET | `/api/chat/history` | Yes | Get user's chat history |
 | DELETE | `/api/chat/history` | Yes | Clear chat history |
 
+### Conversations
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| GET | `/api/chat/conversations` | Yes | Get user's conversations |
+| POST | `/api/chat/conversations` | Yes | Create new conversation |
+| DELETE | `/api/chat/conversations/:id` | Yes | Delete conversation |
+| GET | `/api/chat/messages/:conversationId` | Yes | Get messages for conversation |
+
 ### User
 
 | Method | Endpoint | Auth | Description |
@@ -502,6 +577,45 @@ DISCORD_BOT_TOKEN=your_token PYTHON_API_URL=http://localhost:5000 node bot.js
 
 ### Templates
 - Financial statement templates (Balance Sheet, P&L, Cash Flow)
+
+---
+
+## Video Presentation
+
+The landing page includes an embedded video presentation that demonstrates FinSight's capabilities for KPMG Financial Officers. The video showcases:
+
+- AI-powered financial analysis
+- Real-time chat interface with contextual understanding
+- Financial calculation tools (NPV, IRR, ROI, depreciation)
+- Compliance information access (IFRS/GAAP)
+- Tax regulation support for EU jurisdictions
+- Conversation management features
+
+The video is automatically served from the Angular assets folder and plays on the landing page at http://localhost:3000
+
+## Chat Conversations
+
+FinSight now features a ChatGPT-style conversation system that allows users to:
+
+- **Create new conversations** using the "+ New Chat" button in the sidebar
+- **Switch between conversations** by clicking on any conversation in the list
+- **View conversation history** with persistent storage in PostgreSQL
+- **Delete conversations** with confirmation dialog
+- **Auto-generated titles** based on the first message in each conversation
+- **Maintain context** within each conversation for more coherent AI interactions
+
+### How It Works
+1. When you start a new chat, a conversation entry is created in the database
+2. All messages exchanged are stored with their conversation ID
+3. Switching conversations loads the appropriate message history
+4. The sidebar shows all your conversations with timestamps
+5. Active conversations are highlighted in the sidebar
+
+### API Endpoints for Conversations
+- `GET /api/chat/conversations` - Get all conversations for the current user
+- `POST /api/chat/conversations` - Create a new conversation
+- `DELETE /api/chat/conversations/:id` - Delete a conversation
+- `GET /api/chat/messages/:conversationId` - Get messages for a specific conversation
 
 ---
 

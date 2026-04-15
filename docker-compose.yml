@@ -12,7 +12,6 @@ services:
       POSTGRES_DB: finsight
     volumes:
       - postgres-data:/var/lib/postgresql/data
-      - ./config/database.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 10s
@@ -21,7 +20,7 @@ services:
     networks:
       - finsight-network
 
-  # Ollama LLM (GPU enabled)
+  # Ollama LLM (GPU or CPU)
   ollama:
     image: ollama/ollama:latest
     container_name: finsight-ollama
@@ -38,16 +37,6 @@ services:
       timeout: 10s
       retries: 3
       start_period: 90s
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: 1
-              capabilities: [gpu]
-      placement:
-        constraints:
-          - node.platform.os == linux
     networks:
       - finsight-network
 
