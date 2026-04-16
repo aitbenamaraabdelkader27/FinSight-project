@@ -185,8 +185,8 @@ interface ConversationResponse {
     h1 { font-size: clamp(2rem, 4vw, 3.3rem); line-height: 0.98; letter-spacing: -0.04em; margin-bottom: 16px; }
     h2 { font-size: 1.5rem; }
     .sidebar-text { color: var(--text-secondary); line-height: 1.7; margin-bottom: 22px; }
-    .new-chat-btn { width: 100%; padding: 14px 16px; background: linear-gradient(135deg, #d8f3ff, #79c5ff); color: #09213a; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 0.95rem; margin-bottom: 20px; transition: background 0.2s; }
-    .new-chat-btn:hover { background: linear-gradient(135deg, #c4eaff, #5ab8ff); }
+    .new-chat-btn { width: 100%; padding: 14px 16px; background: #090059; color: #f5f8fc; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 0.95rem; margin-bottom: 20px; transition: background 0.2s; }
+    .new-chat-btn:hover { background: #0a1a47; }
     .conversations-section { margin-bottom: 20px; }
     .conversations-title { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.12em; color: var(--text-muted); margin-bottom: 10px; }
     .conversations-list { display: flex; flex-direction: column; gap: 4px; max-height: 200px; overflow-y: auto; }
