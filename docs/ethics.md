@@ -230,8 +230,46 @@ FinSight is designed for:
 - Knowledge base files versioned
 
 ---
+## 10. Ethical Reflection
 
-## 10. Summary
+Beyond technical safeguards, FinSight raises important ethical considerations related to human interaction with AI systems.
+
+### ELIZA Effect
+
+Users may attribute human-like intelligence, understanding, or authority to FinSight, even though it is a computational system. This may lead to overconfidence in the chatbot’s responses.
+
+To mitigate this:
+- FinSight clearly identifies itself as an AI assistant
+- It encourages users to verify critical information
+- It avoids emotional or human-like language
+
+### Risk of Over-Reliance
+
+Users may become dependent on FinSight for financial decisions, reducing critical thinking.
+
+To prevent this:
+- The system includes verification reminders
+- It positions itself as a support tool, not a decision-maker
+
+### Chatbot Psychosis
+
+In extreme cases, users may develop an unhealthy relationship with the chatbot or trust it excessively.
+
+FinSight minimizes this risk by:
+- avoiding anthropomorphic design
+- maintaining a professional tone
+- limiting conversational behavior
+
+### Limitations
+
+Despite safeguards:
+- The model may still produce incorrect or incomplete responses
+- Financial regulations may change over time
+- The system cannot replace human expertise
+
+Therefore, FinSight must always be used as a complementary tool.
+
+## 11. Summary
 
 ### 10.1 Ethical Principles Applied
 
@@ -253,7 +291,7 @@ This ethical assessment should be reviewed:
 
 ---
 
-## 11. References
+## 12. References
 
 - International Accounting Standards Board (IASB): https://www.iasplus.com/en IFRS Standards
 - EU Corporate Tax Guidelines: https://taxation-customs.ec.europa.eu
