@@ -24,17 +24,44 @@ async function initDb() {
 }
 
 async function callPythonBot(message) {
-  const response = await fetch(`${PYTHON_API_URL}/api/chat`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ message })
-  });
-  
-  if (!response.ok) {
-    throw new Error('Python API error');
+  // Try Python bot first
+  try {
+    const response = await fetch(`${PYTHON_API_URL}/api/chat`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message }),
+      signal: AbortSignal.timeout(5000)
+    });
+    
+    if (response.ok) {
+      return response.json();
+    }
+  } catch (e) {
+    console.log('Python bot failed:', e.message);
   }
   
-  return response.json();
+  // Fall back to direct Ollama call
+  try {
+    const ollamaResponse = await fetch(`${process.env.OLLAMA_BASE_URL || 'http://localhost:11434'}/api/chat`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'mistral-nemo',
+        messages: [{ role: 'user', content: message }],
+        stream: false
+      }),
+      signal: AbortSignal.timeout(120000)
+    });
+    
+    if (ollamaResponse.ok) {
+      const data = await ollamaResponse.json();
+      return { response: data.message?.content || 'No response' };
+    }
+    throw new Error('Ollama error: ' + ollamaResponse.status);
+  } catch (e) {
+    console.error('Ollama call failed:', e.message);
+    throw new Error('Failed to get response from AI service');
+  }
 }
 
 // ==================== Auth Endpoints ====================

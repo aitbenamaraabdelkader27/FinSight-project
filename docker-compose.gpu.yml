@@ -80,6 +80,7 @@ services:
       DATABASE_URL: postgresql://postgres:postgres@postgres:5432/finsight
       JWT_SECRET: ${JWT_SECRET:-finsight-jwt-secret-change-in-production}
       PYTHON_API_URL: http://finsight-bot:5000
+      OLLAMA_BASE_URL: http://ollama:11434
       PORT: 3000
     depends_on:
       postgres:
