@@ -40,9 +40,9 @@ async function callPythonBot(message) {
     console.log('Python bot failed:', e.message);
   }
   
-  // Fall back to direct Ollama call
+  // Fall back to direct Ollama call via host.docker.internal
   try {
-    const ollamaResponse = await fetch(`${process.env.OLLAMA_BASE_URL || 'http://localhost:11434'}/api/chat`, {
+    const ollamaResponse = await fetch('http://host.docker.internal:11434/api/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
