@@ -21,15 +21,44 @@ async function initializeDatabase() {
     throw error;
   }
 
-  try {
-    await pool.query(`
-      SELECT table_name FROM information_schema.tables 
-      WHERE table_schema = 'public' AND table_name IN ('users', 'conversations', 'messages')
-    `);
-    console.log('[DB] Database tables verified');
-  } catch (error) {
-    console.log('[DB] Tables will be created on first use');
-  }
+  await createSchema();
+  console.log('[DB] Database tables verified');
+}
+
+async function createSchema() {
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS users (
+      id SERIAL PRIMARY KEY,
+      username VARCHAR(50) UNIQUE NOT NULL,
+      password_hash TEXT NOT NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS conversations (
+      id SERIAL PRIMARY KEY,
+      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      title VARCHAR(255) NOT NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS messages (
+      id SERIAL PRIMARY KEY,
+      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      conversation_id INTEGER REFERENCES conversations(id) ON DELETE CASCADE,
+      role VARCHAR(20) DEFAULT 'user',
+      message TEXT NOT NULL,
+      response TEXT NOT NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);
+    CREATE INDEX IF NOT EXISTS idx_conversations_user_id ON conversations(user_id);
+    CREATE INDEX IF NOT EXISTS idx_conversations_updated ON conversations(updated_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_messages_conversation_id ON messages(conversation_id);
+    CREATE INDEX IF NOT EXISTS idx_messages_user_id ON messages(user_id);
+    CREATE INDEX IF NOT EXISTS idx_messages_created_at ON messages(created_at DESC);
+  `);
 }
 
 // ==================== Users ====================

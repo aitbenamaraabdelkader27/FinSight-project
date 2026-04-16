@@ -101,6 +101,9 @@ Remember: You are a professional assistant for finance professionals."""
                 
                 # Generate response
                 response = self.ollama_client.generate(message)
+                if response.startswith("Error:"):
+                    print(f"Ollama generation failed, using local fallback: {response}")
+                    return self._handle_basic_conversation(message)
                 
                 # Add assistant response to history
                 self.ollama_client.add_to_history("assistant", response)

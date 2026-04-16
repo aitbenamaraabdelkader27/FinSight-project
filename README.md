@@ -27,11 +27,13 @@
 - [Configuration](#configuration)
 - [Running Without Docker](#running-without-docker)
 - [API Endpoints](#api-endpoints)
+- [Discord Bot Setup](#discord-bot-setup)
 - [Discord Commands](#discord-commands)
 - [Knowledge Base](#knowledge-base)
 - [Video Presentation](#video-presentation)
 - [Chat Conversations](#chat-conversations)
 - [Troubleshooting](#troubleshooting)
+- [Common Commands](#common-commands)
 - [Environment Variables](#environment-variables)
 - [License](#license)
 
@@ -105,6 +107,17 @@ All AI processing runs locally using Ollama - no external API calls or data leav
                                                             └─────────────┘
 ```
 
+### Services
+
+| Service | URL | Description |
+|---------|-----|-------------|
+| `finsight-api` | `http://localhost:3000` | Express API, also serves the Angular web build |
+| `finsight-web` | *(built into finsight-api image)* | Angular source built inside the `finsight-api` Docker image |
+| `finsight-postgres` | `localhost:5432` | PostgreSQL 15 |
+| `finsight-bot` | `http://finsight-bot:5000` *(internal)* | Python chatbot API |
+| `finsight-ollama` | `http://localhost:11434` | Ollama LLM |
+| `finsight-discord` | *(optional)* | Discord bot, started with the `discord` Compose profile |
+
 ### Data Flow
 
 1. **Web**: Angular → Express API → Python Bot → Ollama → LLM Response
@@ -161,6 +174,7 @@ All AI processing runs locally using Ollama - no external API calls or data leav
 - Slash commands (`/chat`, `/calculate`, `/compliance`, `/tax`)
 - Prefix commands (`!chat`, `!calc`, `!ifrs`, `!tax`)
 - Warm-up on startup to handle cold starts
+- Optional service started via `discord` Compose profile
 
 ### Authentication
 - JWT-based authentication
@@ -189,20 +203,19 @@ All AI processing runs locally using Ollama - no external API calls or data leav
 
 ## Prerequisites
 
-### Required
-- **Docker** and **Docker Compose**
-- **One of the following GPU options**:
-  - **NVIDIA GPU** with CUDA support (e.g., RTX 5070 Ti, RTX 4090)
-  - **AMD Discrete GPU** with ROCm support (e.g., RX 7900 XTX)
-  - **AMD APU** (Integrated Graphics - e.g., Ryzen 7 7730U with Vega)
-  - **No GPU** (CPU-only mode, slower performance)
+### Required (from WSL Ubuntu)
+
+- **Docker Desktop** installed on Windows with **WSL integration** enabled for your Ubuntu distribution.
+- Verify Docker is accessible from WSL:
+
+```bash
+docker compose version
+```
 
 ### Optional (for local development)
 - Node.js 20+
 - Python 3.12+
 - PostgreSQL 15+
-
-> **Note:** For detailed GPU requirements and compatibility, see [GPU Compatibility](#gpu-compatibility) section.
 
 ---
 
@@ -210,7 +223,9 @@ All AI processing runs locally using Ollama - no external API calls or data leav
 
 ```
 B-AIA-210-PAR-2-1-eliza-24/
-├── docker-compose.yml           # Container orchestration
+├── docker-compose.yml           # Container orchestration (core stack)
+├── docker-compose.gpu.yml       # NVIDIA GPU override
+├── docker-compose.amd.yml       # AMD GPU/APU override
 ├── .env                         # Environment variables (create from example)
 ├── .env.example                 # Environment template
 ├── .gitignore                   # Git ignore rules
@@ -245,17 +260,17 @@ B-AIA-210-PAR-2-1-eliza-24/
 │   │   │   ├── bot.py           # FinSightBot class
 │   │   │   ├── ollama_client.py # Ollama integration
 │   │   │   ├── commands.py      # Command handler
-│   │   │   └── calculator.py    # Financial calculations
+│   │   │   └── calculator.py   # Financial calculations
 │   │   └── knowledge/           # Knowledge base
 │   │       ├── ifrs/            # IFRS standards docs
-│   │       ├── gaap/           # GAAP docs
-│   │       ├── tax/            # Tax guides
-│   │       ├── templates/      # Report templates
-│   │       └── checklists/     # Audit checklists
+│   │       ├── gaap/            # GAAP docs
+│   │       ├── tax/             # Tax guides
+│   │       ├── templates/       # Report templates
+│   │       └── checklists/      # Audit checklists
 │   ├── Dockerfile
 │   └── requirements.txt
 │
-└── finsight-discord/            # Discord bot
+└── finsight-discord/            # Discord bot (optional)
     ├── bot.js                   # Main bot logic
     ├── package.json
     └── Dockerfile
@@ -275,84 +290,94 @@ cp .env.example .env
 
 ### 2. Configure Environment Variables
 
-Edit `.env` and add your Discord bot token:
+Generate a JWT secret:
 
 ```bash
-# Required
-DISCORD_BOT_TOKEN=your_discord_bot_token_here
-
-# Optional (defaults provided)
-JWT_SECRET=your-secret-key-change-in-production
+openssl rand -hex 32
 ```
 
-**To get a Discord bot token:**
-1. Go to https://discord.com/developers/applications
-2. Create a new application
-3. Go to "Bot" and create a bot
-4. Copy the token
-5. Enable "Message Content" intent in Bot settings
+Paste the generated value into `.env`:
 
-Or you can use the original discord bot hosted on my machine with this link:
-https://discord.com/oauth2/authorize?client_id=1488875465920745592&permissions=8&integration_type=0&scope=bot
+```env
+JWT_SECRET=paste_the_generated_value_here
+```
 
-### 3. Choose Your GPU Configuration 
+For local development, all other default values in `.env.example` can stay unchanged.
 
-| GPU Type | Command |
-|----------|---------|
-| **NVIDIA GPU** | `docker compose -f docker-compose.gpu.yml up -d` |
-| **AMD GPU/APU** | `docker compose -f docker-compose.amd.yml up -d` |
-| **CPU Only** | `docker compose up -d` |
+> **Note:** The Discord bot token is only required if you plan to run the Discord bot. See [Discord Bot Setup](#discord-bot-setup).
 
-> **Note:** First run may take 30-90 seconds as the model loads into GPU memory.
+### 3. Build and compose
 
-This will start all 5 services:
-- `finsight-postgres` - PostgreSQL database (port 5432)
-- `finsight-ollama` - Ollama LLM (port 11434)
-- `finsight-bot` - Python chatbot API (port 5000)
-- `finsight-api` - Express API (port 3000)
-- `finsight-discord` - Discord bot
+_____________________________________________________________
 
-### 4. Access the Application
+
+### 4. Pull the Ollama Model
+
+After the containers are running, pull the model (approx. 7.1 GB):
+
+```bash
+docker exec -it finsight-ollama ollama pull mistral-nemo
+```
+
+### 5. Verify Running Services
+
+```bash
+docker compose ps
+```
+
+Expected output:
+
+```text
+finsight-api        Up
+finsight-bot        Up
+finsight-ollama     Up
+finsight-postgres   Up
+```
+
+### 6. Access the Application
 
 | Service | URL | Description |
 |---------|-----|-------------|
 | Web UI | http://localhost:3000 | Angular frontend with video |
+| Auth | http://localhost:3000/auth | Register or log in |
 | Chat | http://localhost:3000/chat | Chat with conversations |
 | API | http://localhost:3000/api | Express API |
 | Ollama | http://localhost:11434 | LLM API |
 
+### 7. First Login
+
+1. Go to **http://localhost:3000/auth** and create an account.
+2. Log in if redirected.
+3. Go to **http://localhost:3000/chat** to start chatting.
+4. Use the **"+ New Chat"** button to create new conversations.
+
+> **Note:** The first message after starting Ollama may take 30–90 seconds as the model loads into memory.
+
 > **Note:** When building the Angular frontend manually (outside Docker), use `npm run build` in the `finsight-web` directory, not `npx @angular/cli@17 build`, to prevent UI state reset issues.
-
-### 5. After First Login
-
-1. Go to **http://localhost:3000/auth** to register an account
-2. Go to **http://localhost:3000/chat** to start chatting
-3. Use the **"New Chat"** button (now in deep blue gradient to match site theme) to create new conversations
-4. The landing page includes a **video presentation** demonstrating FinSight's features
-
-### 6. Verify Status
-
-```bash
-# Check container status
-docker compose ps
-
-# View logs
-docker compose logs -f finsight-discord
-```
 
 ---
 
 ## Configuration
 
+### Ollama Context Window
+
+The default Ollama context is set to `1024` tokens in Docker Compose so `mistral-nemo` can run on modest WSL machines. If you have more RAM or GPU memory, increase `OLLAMA_NUM_CTX` in your Compose file:
+
+```yaml
+environment:
+  - OLLAMA_NUM_CTX=4096
+```
+
 ### Environment Variables
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `DISCORD_BOT_TOKEN` | *(required)* | Discord bot token |
+| `DISCORD_BOT_TOKEN` | *(required for Discord)* | Discord bot token |
 | `JWT_SECRET` | `finsight-jwt-secret-change-in-production` | JWT signing secret |
 | `DATABASE_URL` | `postgresql://postgres:postgres@postgres:5432/finsight` | PostgreSQL connection |
 | `OLLAMA_BASE_URL` | `http://ollama:11434` | Ollama API URL |
 | `OLLAMA_MODEL` | `mistral-nemo` | LLM model name |
+| `OLLAMA_NUM_CTX` | `1024` | Ollama context window size |
 | `PYTHON_API_URL` | `http://finsight-bot:5000` | Python bot URL |
 | `PORT` | `3000` | Express server port |
 
@@ -373,40 +398,7 @@ deploy:
 
 ---
 
-## GPU Compatibility
-
-FinSight supports NVIDIA, AMD discrete GPUs, AMD APUs (integrated graphics), and CPU-only deployments.
-
-| GPU Type | Compose File | Ollama Image | Notes |
-|----------|--------------|--------------|-------|
-| **AMD APU** (Integrated) | `docker-compose.amd.yml` | `rjmalagon/ollama-linux-amd-apu` | For Ryzen 7730U, Vega graphics |
-| **AMD Discrete GPU** | `docker-compose.amd.yml` | `ollama/ollama:rocm:latest` | RX 6000/7000 series |
-| **NVIDIA GPU** | `docker-compose.gpu.yml` | `ollama/ollama:latest` | CUDA backend |
-| **CPU Only** | `docker-compose.yml` | `ollama/ollama:latest` | No GPU required |
-
-### Usage
-
-**AMD APU (Integrated Graphics - e.g., Ryzen 7 7730U):**
-```bash
-docker compose -f docker-compose.amd.yml up -d
 ```
-
-**AMD Discrete GPU:**
-```bash
-docker compose -f docker-compose.amd.yml up -d
-```
-
-**NVIDIA GPU:**
-```bash
-docker compose -f docker-compose.gpu.yml up -d
-```
-
-**CPU Only (no GPU):**
-```bash
-docker compose up -d
-```
-
-> **Note:** The first request after starting Ollama may take 30-90 seconds as the model loads into memory.
 
 ---
 
@@ -415,25 +407,18 @@ docker compose up -d
 ### 1. PostgreSQL Setup
 
 ```bash
-# Start PostgreSQL
 docker run -d -e POSTGRES_PASSWORD=postgres \
   -e POSTGRES_DB=finsight \
   -p 5432:5432 postgres:15
 
-# Run schema
 psql -h localhost -U postgres -d finsight -f config/database.sql
 ```
 
 ### 2. Ollama Setup
 
 ```bash
-# Install Ollama
 curl -fsSL https://ollama.com/install.sh | sh
-
-# Pull model (7.1 GB)
 ollama pull mistral-nemo
-
-# Start server
 ollama serve
 ```
 
@@ -524,6 +509,123 @@ DISCORD_BOT_TOKEN=your_token PYTHON_API_URL=http://localhost:5000 node bot.js
 
 ---
 
+## Discord Bot Setup
+
+The Discord bot is **optional**. It is not started by default and requires a separate Compose profile.
+
+### 1. Create or Open the Discord Application
+
+Go to:
+
+```
+https://discord.com/developers/applications
+```
+
+Create a new application or open your existing FinSight application.
+
+### 2. Create the Bot Token
+
+In the Discord Developer Portal:
+
+1. Open your application.
+2. Go to **Bot**.
+3. Click **Reset Token** or **View Token**.
+4. Copy the token.
+
+Add it to `.env`:
+
+```env
+DISCORD_BOT_TOKEN=paste_your_discord_bot_token_here
+```
+
+> Keep this token private. Do not commit `.env`.
+
+### 3. Enable Required Bot Settings
+
+In **Bot > Privileged Gateway Intents**, enable:
+
+```
+Message Content Intent
+```
+
+This is required because the bot supports prefix commands like `!chat`, `!calc`, and `!ping`.
+
+Without this setting the container will restart with:
+
+```
+Error: Used disallowed intents
+```
+
+### 4. Invite the Bot to Your Server
+
+In the Developer Portal:
+
+1. Go to **OAuth2 > URL Generator**.
+2. Select scopes:
+
+```
+bot
+applications.commands
+```
+
+3. Select bot permissions. For local testing, **Administrator** is the simplest option.
+   - If not using Administrator, the bot needs permissions to: read messages, send messages, use slash commands, and embed links.
+4. Open the generated URL, choose your Discord server, and authorize.
+
+Alternatively, you can invite the original hosted bot directly:
+
+```
+https://discord.com/oauth2/authorize?client_id=1488875465920745592&permissions=8&integration_type=0&scope=bot
+```
+
+### 5. Start the Discord Bot
+
+Make sure the core stack is running first:
+
+```bash
+docker compose up -d
+```
+
+Then start the Discord bot with its profile:
+
+```bash
+docker compose --profile discord up -d finsight-discord
+```
+
+Check status:
+
+```bash
+docker compose ps
+```
+
+Expected:
+
+```text
+finsight-discord    Up
+```
+
+If it shows `Restarting`, check the logs:
+
+```bash
+docker compose logs --tail=80 finsight-discord
+```
+
+Follow live logs:
+
+```bash
+docker compose logs -f finsight-discord
+```
+
+Restart after changing `.env` or Discord Developer Portal settings:
+
+```bash
+docker compose --profile discord restart finsight-discord
+```
+
+> **Note:** The Discord bot calls the same Python chatbot API as the web app. The core stack must be running for AI responses.
+
+---
+
 ## Discord Commands
 
 ### Slash Commands
@@ -596,9 +698,11 @@ The landing page includes an embedded video presentation that demonstrates FinSi
 
 The video is automatically served from the Angular assets folder and plays on the landing page at http://localhost:3000
 
+---
+
 ## Chat Conversations
 
-FinSight now features a ChatGPT-style conversation system that allows users to:
+FinSight features a ChatGPT-style conversation system that allows users to:
 
 - **Create new conversations** using the "+ New Chat" button in the sidebar
 - **Switch between conversations** by clicking on any conversation in the list
@@ -614,37 +718,45 @@ FinSight now features a ChatGPT-style conversation system that allows users to:
 4. The sidebar shows all your conversations with timestamps
 5. Active conversations are highlighted in the sidebar
 
-### API Endpoints for Conversations
-- `GET /api/chat/conversations` - Get all conversations for the current user
-- `POST /api/chat/conversations` - Create a new conversation
-- `DELETE /api/chat/conversations/:id` - Delete a conversation
-- `GET /api/chat/messages/:conversationId` - Get messages for a specific conversation
-
 ---
 
 ## Troubleshooting
 
+### Web App Not Responding
+
+```bash
+curl http://localhost:3000/api/health
+curl http://localhost:11434/api/tags
+docker compose logs -f finsight-api finsight-bot
+```
+
+If `mistral-nemo` is missing, pull it again:
+
+```bash
+docker exec -it finsight-ollama ollama pull mistral-nemo
+```
+
 ### Ollama Cold Start
 
-The first request to Ollama after container restart takes 30-90 seconds while the model loads into GPU memory. The Discord bot includes a warm-up on startup, but if you encounter timeouts:
+The first request after container restart takes 30–90 seconds while the model loads into GPU memory. The Discord bot includes a warm-up on startup. If you encounter timeouts:
 
 - Increase timeout in `finsight-discord/bot.js` (current: 90s)
 - Wait 60s after container start before issuing commands
 
-### GPU Not Detected
+### Discord Bot Restarting
+
+If `finsight-discord` shows `Restarting`, the most common cause is a missing or incorrect **Message Content Intent** in the Discord Developer Portal.
+
+Check logs for:
+
+```
+Error: Used disallowed intents
+```
+
+Fix: Enable **Message Content Intent** under **Bot > Privileged Gateway Intents** in the Discord Developer Portal, then restart:
 
 ```bash
-# Verify nvidia-docker is installed
-docker run --rm --gpus all nvidia/cuda:12.0-base-ubuntu nvidia-smi
-
-# Check docker-compose.yml has GPU config
-deploy:
-  resources:
-    reservations:
-      devices:
-        - driver: nvidia
-          count: 1
-          capabilities: [gpu]
+docker compose --profile discord restart finsight-discord
 ```
 
 ### Container Network Issues
@@ -672,14 +784,72 @@ docker exec -it finsight-postgres psql -U postgres -d finsight
 
 ### Pull Ollama Model
 
-If models aren't available in Ollama:
-
 ```bash
-# Access container and pull model
+# Pull model inside the container
 docker exec -it finsight-ollama ollama pull mistral-nemo
 
 # List available models
 docker exec -it finsight-ollama ollama list
+```
+
+---
+
+## Common Commands
+
+Start the core web stack:
+
+```bash
+docker compose up -d
+```
+
+Start the Discord bot as well:
+
+```bash
+docker compose --profile discord up -d finsight-discord
+```
+
+Restart only the Discord bot:
+
+```bash
+docker compose --profile discord restart finsight-discord
+```
+
+Show container status:
+
+```bash
+docker compose ps
+```
+
+Show core logs:
+
+```bash
+docker compose logs -f finsight-api finsight-bot
+```
+
+Show Discord logs:
+
+```bash
+docker compose logs -f finsight-discord
+```
+
+Stop everything (including Discord bot):
+
+```bash
+docker compose --profile discord down
+```
+
+Stop only the Discord bot:
+
+```bash
+docker compose --profile discord stop finsight-discord
+```
+
+Rebuild after code changes:
+
+```bash
+docker compose build
+docker compose up -d
+docker compose --profile discord up -d finsight-discord
 ```
 
 ---
@@ -698,6 +868,7 @@ PORT=3000
 ```bash
 OLLAMA_BASE_URL=http://ollama:11434
 OLLAMA_MODEL=mistral-nemo
+OLLAMA_NUM_CTX=1024
 ```
 
 ### finsight-discord (.env)
@@ -716,3 +887,4 @@ EXPRESS_API_URL=http://finsight-api:3000
 - **Angular** - https://angular.io
 - **Discord.js** - https://discord.js.org
 - **PostgreSQL** - https://www.postgresql.org
+```

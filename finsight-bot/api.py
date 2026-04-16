@@ -10,7 +10,7 @@ import sys
 bot_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, bot_dir)
 
-from http.server import HTTPServer, BaseHTTPRequestHandler
+from http.server import ThreadingHTTPServer, BaseHTTPRequestHandler
 import json
 
 from dotenv import load_dotenv
@@ -36,11 +36,14 @@ class BotHandler(BaseHTTPRequestHandler):
                 return
 
             response = self.bot.process_message(message)
-            
-            self.send_response(200)
-            self.send_header('Content-Type', 'application/json')
-            self.end_headers()
-            self.wfile.write(json.dumps({'response': response}).encode())
+
+            try:
+                self.send_response(200)
+                self.send_header('Content-Type', 'application/json')
+                self.end_headers()
+                self.wfile.write(json.dumps({'response': response}).encode())
+            except BrokenPipeError:
+                print("[API] Client disconnected before response was sent")
         
         else:
             self.send_response(404)
@@ -63,7 +66,7 @@ class BotHandler(BaseHTTPRequestHandler):
 def run_server(port=5000):
     BotHandler.bot = FinSightBot()
     
-    server = HTTPServer(('', port), BotHandler)
+    server = ThreadingHTTPServer(('', port), BotHandler)
     print(f"FinSight Bot API running on http://localhost:{port}")
     print("Endpoints:")
     print(f"  POST http://localhost:{port}/api/chat")
