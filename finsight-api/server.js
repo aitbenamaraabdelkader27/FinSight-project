@@ -13,6 +13,11 @@ app.use(cors());
 app.use(express.json());
 
 const PYTHON_API_URL = process.env.PYTHON_API_URL || 'http://localhost:5000';
+const OLLAMA_BASE_URL = process.env.OLLAMA_BASE_URL || 'http://localhost:11434';
+const AI_REQUEST_TIMEOUT_MS = Number(process.env.AI_REQUEST_TIMEOUT_MS || 600000);
+const OLLAMA_MODEL = process.env.OLLAMA_MODEL || 'mistral-nemo';
+const OLLAMA_NUM_CTX = Number(process.env.OLLAMA_NUM_CTX || 1024);
+const OLLAMA_NUM_PREDICT = Number(process.env.OLLAMA_NUM_PREDICT || 512);
 const ANGULAR_DIST = path.join(__dirname, 'dist', 'finsight-web', 'browser');
 
 let db = null;
@@ -30,7 +35,7 @@ async function callPythonBot(message) {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ message }),
-      signal: AbortSignal.timeout(5000)
+      signal: AbortSignal.timeout(AI_REQUEST_TIMEOUT_MS)
     });
     
     if (response.ok) {
@@ -40,17 +45,21 @@ async function callPythonBot(message) {
     console.log('Python bot failed:', e.message);
   }
   
-  // Fall back to direct Ollama call via host.docker.internal
+  // Fall back to direct Ollama call if the Python bot is temporarily unavailable.
   try {
-    const ollamaResponse = await fetch('http://host.docker.internal:11434/api/chat', {
+    const ollamaResponse = await fetch(`${OLLAMA_BASE_URL}/api/chat`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        model: 'mistral-nemo',
+        model: OLLAMA_MODEL,
         messages: [{ role: 'user', content: message }],
+        options: {
+          num_ctx: OLLAMA_NUM_CTX,
+          num_predict: OLLAMA_NUM_PREDICT
+        },
         stream: false
       }),
-      signal: AbortSignal.timeout(120000)
+      signal: AbortSignal.timeout(AI_REQUEST_TIMEOUT_MS)
     });
     
     if (ollamaResponse.ok) {
@@ -304,6 +313,7 @@ initDb().then(database => {
 ✅ Server running on: http://localhost:${PORT}
 📁 Frontend served from: ${ANGULAR_DIST}
 🔗 Python API: ${PYTHON_API_URL}
+🔗 Ollama API: ${OLLAMA_BASE_URL}
 📀 Database: PostgreSQL (conversations + messages)
 
 Auth Endpoints:

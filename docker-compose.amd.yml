@@ -12,6 +12,7 @@ services:
       POSTGRES_DB: finsight
     volumes:
       - postgres-data:/var/lib/postgresql/data
+      - ./config/database.sql:/docker-entrypoint-initdb.d/001-schema.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 10s
@@ -43,7 +44,7 @@ services:
       - /dev/kfd:/dev/kfd
       - /dev/dri:/dev/dri
     healthcheck:
-      test: ["CMD-SHELL", "wget --spider -q http://localhost:11434/api/tags || curl -f http://localhost:11434/api/tags || exit 1"]
+      test: ["CMD", "ollama", "list"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -63,6 +64,9 @@ services:
     environment:
       OLLAMA_BASE_URL: http://ollama:11434
       OLLAMA_MODEL: mistral-nemo
+      OLLAMA_NUM_CTX: 1024
+      OLLAMA_NUM_PREDICT: 512
+      OLLAMA_TIMEOUT_SECONDS: 600
     depends_on:
       ollama:
         condition: service_started
@@ -74,8 +78,6 @@ services:
     build:
       context: .
       dockerfile: finsight-api/Dockerfile
-      args:
-        FRONTEND_DIST: ./finsight-web/dist/finsight-web/browser
     container_name: finsight-api
     restart: unless-stopped
     ports:
@@ -84,6 +86,11 @@ services:
       DATABASE_URL: postgresql://postgres:postgres@postgres:5432/finsight
       JWT_SECRET: ${JWT_SECRET:-finsight-jwt-secret-change-in-production}
       PYTHON_API_URL: http://finsight-bot:5000
+      OLLAMA_BASE_URL: http://ollama:11434
+      OLLAMA_MODEL: mistral-nemo
+      OLLAMA_NUM_CTX: 1024
+      OLLAMA_NUM_PREDICT: 512
+      AI_REQUEST_TIMEOUT_MS: 600000
       PORT: 3000
     depends_on:
       postgres:
@@ -95,6 +102,8 @@ services:
 
   # Discord Bot
   finsight-discord:
+    profiles:
+      - discord
     build:
       context: ./finsight-discord
       dockerfile: Dockerfile
