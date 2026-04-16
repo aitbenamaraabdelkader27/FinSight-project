@@ -23,7 +23,9 @@ class OllamaClient:
         self.model = model or os.environ.get("OLLAMA_MODEL", "mistral-nemo")
         self.base_url = base_url or os.environ.get("OLLAMA_BASE_URL", "http://localhost:11434")
         self.temperature = temperature
-        self.max_tokens = max_tokens
+        self.max_tokens = int(os.environ.get("OLLAMA_NUM_PREDICT", max_tokens))
+        self.num_ctx = int(os.environ.get("OLLAMA_NUM_CTX", "1024"))
+        self.timeout = int(os.environ.get("OLLAMA_TIMEOUT_SECONDS", "600"))
         self.conversation_history: List[Dict[str, str]] = []
     
     def _load_system_prompt(self) -> str:
@@ -98,8 +100,11 @@ Remember: You are a professional assistant for finance professionals."""
         payload = {
             "model": self.model,
             "messages": messages,
-            "temperature": self.temperature,
-            "max_tokens": self.max_tokens,
+            "options": {
+                "temperature": self.temperature,
+                "num_ctx": self.num_ctx,
+                "num_predict": self.max_tokens,
+            },
             "stream": stream
         }
         
@@ -107,7 +112,7 @@ Remember: You are a professional assistant for finance professionals."""
             response = requests.post(
                 f"{self.base_url}/api/chat",
                 json=payload,
-                timeout=120
+                timeout=self.timeout
             )
             
             if response.status_code == 200:
@@ -136,8 +141,11 @@ Remember: You are a professional assistant for finance professionals."""
         payload = {
             "model": self.model,
             "messages": messages,
-            "temperature": self.temperature,
-            "max_tokens": self.max_tokens,
+            "options": {
+                "temperature": self.temperature,
+                "num_ctx": self.num_ctx,
+                "num_predict": self.max_tokens,
+            },
             "stream": True
         }
         
@@ -146,7 +154,7 @@ Remember: You are a professional assistant for finance professionals."""
                 f"{self.base_url}/api/chat",
                 json=payload,
                 stream=True,
-                timeout=120
+                timeout=self.timeout
             )
             
             for line in response.iter_lines():
