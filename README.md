@@ -292,7 +292,10 @@ JWT_SECRET=your-secret-key-change-in-production
 4. Copy the token
 5. Enable "Message Content" intent in Bot settings
 
-### 3. Choose Your GPU Configuration
+Or you can use the original discord bot hosted on my machine with this link:
+https://discord.com/oauth2/authorize?client_id=1488875465920745592&permissions=8&integration_type=0&scope=bot
+
+### 3. Choose Your GPU Configuration 
 
 | GPU Type | Command |
 |----------|---------|

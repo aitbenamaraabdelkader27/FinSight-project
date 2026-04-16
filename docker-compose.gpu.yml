@@ -87,6 +87,8 @@ services:
         condition: service_healthy
       finsight-bot:
         condition: service_started
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     networks:
       - finsight-network
 

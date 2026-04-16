@@ -1,4 +1,4 @@
-const { Client, GatewayIntentBits, Events, SlashCommandBuilder, REST, Routes } = require('discord.js');
+const { Client, GatewayIntentBits, Events, SlashCommandBuilder, REST, Routes, EmbedBuilder } = require('discord.js');
 const axios = require('axios');
 require('dotenv').config();
 
@@ -99,6 +99,22 @@ async function callExpressAPI(endpoint, data) {
   }
 }
 
+// Create embed messages with blue theme matching site design
+function createEmbed(content, type = 'info') {
+  const colors = {
+    info: 0x79C5FF,      // Deep blue from site
+    success: 0x79C5FF,
+    warning: 0xFFA500,   // Orange
+    error: 0xFF6B6B      // Red
+  };
+  
+  return new EmbedBuilder()
+    .setColor(colors[type] || colors.info)
+    .setDescription(content)
+    .setTimestamp()
+    .setFooter({ text: 'FinSight AI Assistant' });
+}
+
 async function handleSlashCommand(interaction) {
   const commandName = interaction.commandName;
   const options = interaction.options;
@@ -154,15 +170,15 @@ async function handleSlashCommand(interaction) {
         response = 'Unknown command';
     }
 
-    // Split response if too long (Discord limit 2000 chars)
-    if (response.length > 1900) {
-      await interaction.editReply(response.substring(0, 1900));
-      if (response.length > 1900) {
-        await interaction.followUp('```' + response.substring(1900) + '```');
-      }
-    } else {
-      await interaction.editReply(response);
-    }
+     // Split response if too long (Discord limit 2000 chars)
+     if (response.length > 1900) {
+       await interaction.editReply({ embeds: [createEmbed(response.substring(0, 1900))] });
+       if (response.length > 1900) {
+         await interaction.followUp({ embeds: [createEmbed(response.substring(1900))] });
+       }
+     } else {
+       await interaction.editReply({ embeds: [createEmbed(response)] });
+     }
   } catch (error) {
     console.error('Command error:', error);
     await interaction.editReply('Sorry, I encountered an error processing your command.');
@@ -238,11 +254,11 @@ async function handleMessage(message) {
         return; // Not a command, treat as chat
     }
 
-    try {
-      await message.reply(response);
-    } catch (e) {
-      console.error('Reply error:', e);
-    }
+     try {
+       await message.reply({ embeds: [createEmbed(response)] });
+     } catch (e) {
+       console.error('Reply error:', e);
+     }
     return;
   }
 
