@@ -2,109 +2,104 @@
 
 ## 1. Introduction
 
-FinSight is an AI-powered financial assistant designed to support companies in their financial analysis and decision-making processes.
+FinSight is an AI-powered financial assistant designed to simplify financial analysis and support decision-making.
 
-With the increasing complexity of financial data, businesses need tools that allow them to quickly analyze information, reduce manual work, and make better strategic decisions.
-
-FinSight addresses this need by combining:
-- automated financial calculations  
-- AI-powered interpretation  
-- a user-friendly interface (web and Discord)
-
-The goal is to transform raw financial data into clear, actionable insights.
+It combines automated calculations, AI-powered interpretation, and an accessible interface (web and Discord) to transform raw financial data into actionable business insights.
 
 ---
 
 ## 2. Target Audience
 
-FinSight targets professionals and organizations that regularly deal with financial data:
+FinSight targets:
 
-- Small and Medium Enterprises (SMEs)  
-- Financial analysts  
-- Consultants (e.g. consulting firms environments)  
-- Startup founders  
-- Students and junior professionals in finance  
+- Small and Medium Enterprises (SMEs)
+- Financial analysts and consultants
+- Startup founders
+- Students and junior finance professionals
 
 ---
 
 ## 3. Identified Needs
 
-Based on market observation, the following needs were identified:
+The following needs were identified:
 
-- Simplify financial analysis  
-- Reduce time spent on repetitive calculations  
-- Improve decision-making with structured insights  
-- Access financial tools without complex software  
-- Centralize financial knowledge and operations  
+- Simplify financial analysis
+- Reduce time spent on repetitive calculations
+- Improve decision-making with structured insights
+- Access financial tools easily without complex software
+- Centralize financial operations in one interface
 
 ---
 
 ## 4. Objectives of the Chatbot
 
-FinSight aims to achieve several business objectives:
+FinSight addresses key business objectives:
 
-- Automation: automate financial calculations (ROI, NPV, IRR, etc.)  
-- Decision Support: provide recommendations and interpretations  
-- Efficiency: reduce analysis time  
-- Accessibility: make financial tools available via chatbot  
-- Communication: simplify interaction with financial data  
+- Automation: automate financial calculations (ROI, NPV, IRR, etc.)
+- Decision Support: provide clear insights and recommendations
+- Efficiency: reduce analysis time and manual work
+- Accessibility: provide financial tools via chatbot interface
+- Communication: simplify interaction with financial data
+- Acquisition: attract users through a simple and modern financial tool
+- Retention: encourage repeated usage through daily utility and time savings
 
 ---
 
 ## 5. Value Chain Impact
 
-FinSight creates value at multiple levels of the business chain:
+FinSight creates value across the business chain:
 
 ### Data Processing
-- Faster analysis of financial data  
-- Reduction of manual calculations  
+- Faster analysis of financial data
+- Reduction of manual calculations
 
 ### Decision-Making
-- Clear insights and recommendations  
-- Better strategic choices  
+- Clear and structured insights
+- Improved strategic decisions
 
 ### Productivity
-- Time saving for employees  
-- Automation of repetitive tasks  
+- Significant time savings for employees
+- Automation of repetitive tasks
 
 ### Cost Optimization
-- Reduced need for external tools  
-- Lower operational costs  
+- Reduced reliance on external tools
+- Lower operational costs
 
 ### User Experience
-- Simple interface (web and Discord)  
-- Secure access via authentication  
+- Simple and intuitive interface
+- Secure access through authentication
 
 ---
 
 ## 6. Key Performance Indicators (KPIs)
 
-To evaluate FinSight’s effectiveness, several KPIs can be used:
+FinSight performance can be measured through:
 
-- Time saved on financial analysis  
-- Number of calculations performed  
-- User engagement (sessions, interactions)  
-- Error reduction in financial calculations  
-- User retention rate  
+- Average time saved per financial task
+- Number of chatbot interactions per user
+- Daily and weekly active users
+- User retention rate
+- Reduction in calculation errors
+- Average session duration
 
 ---
 
 ## 7. Return On Investment (ROI)
 
-FinSight generates ROI through:
-
-### Time savings
-- Faster analysis leads to increased productivity  
-
-### Cost reduction
-- Less reliance on expensive financial tools  
-- Reduced need for manual expertise  
-
-### Improved decisions
-- Better financial strategies leading to higher profitability  
+FinSight generates measurable ROI through time and cost savings.
 
 Example:
-If a company saves 5 hours per week per employee on financial tasks, this directly translates into measurable cost savings.
+
+If an employee spends 10 hours per week on financial tasks and FinSight reduces this by 50%:
+
+- Time saved: 5 hours/week
+- Average cost: 30€/hour
+
+Savings:
+5 × 30€ = 150€/week  
+≈ 600€/month per employee  
+
+This demonstrates a direct and measurable financial impact.
 
 ---
 
@@ -114,30 +109,25 @@ FinSight is positioned as a professional financial assistant combining AI and au
 
 Key differentiators:
 
-- Local AI (no paid APIs)  
-- Multi-platform access (web and Discord)  
-- Secure login system  
-- Combination of calculation and interpretation  
+- Local AI (no reliance on paid APIs)
+- Multi-platform access (web and Discord)
+- Secure authentication system
+- Combination of calculation and intelligent interpretation
 
 ---
 
 ## 9. Use Cases
 
-- Analyze company financial performance  
-- Calculate ROI or NPV quickly  
-- Generate financial reports  
-- Access compliance or tax information  
-- Support consultants in client analysis  
+- Financial performance analysis
+- ROI, NPV, IRR calculations
+- Financial reporting support
+- Compliance and tax information access
+- Consultant support in client analysis
 
 ---
 
 ## 10. Conclusion
 
-FinSight is not just a chatbot, but a business tool designed to improve financial workflows.
+FinSight is a business-oriented tool designed to improve financial workflows.
 
-It provides:
-- automation  
-- accessibility  
-- intelligent insights  
-
-By combining these elements, FinSight delivers real business value and supports better decision-making.
+By combining automation, accessibility, and intelligent insights, it helps organizations save time, reduce costs, and make better decisions.
